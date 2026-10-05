@@ -60,3 +60,32 @@ func TestFreq(t *testing.T) {
 		t.Error("rest")
 	}
 }
+
+func TestHiScoreSong(t *testing.T) {
+	intro, loop := HiScoreSong()
+	barSamples := stepsPerBar * framesPerStep * samplesPerFrm
+	if len(intro) != len(hiScoreIntro)*barSamples || len(loop) != len(hiScoreLoop)*barSamples {
+		t.Fatalf("lengths intro %d loop %d", len(intro), len(loop))
+	}
+	var sum, peak float64
+	loud := 0
+	for _, v := range loop {
+		f := float64(v)
+		if math.IsNaN(f) || math.IsInf(f, 0) {
+			t.Fatal("NaN/Inf sample")
+		}
+		sum += f * f
+		peak = math.Max(peak, math.Abs(f))
+		if math.Abs(f) > 0.98 {
+			loud++
+		}
+	}
+	rms := math.Sqrt(sum / float64(len(loop)))
+	t.Logf("loop %.1fs intro %.1fs rms %.3f peak %.3f", float64(len(loop))/SampleRate, float64(len(intro))/SampleRate, rms, peak)
+	if rms < 0.12 || rms > 0.3 { // in line with the other tracks (~0.18)
+		t.Errorf("rms %.3f out of range", rms)
+	}
+	if frac := float64(loud) / float64(len(loop)); frac > 0.01 {
+		t.Errorf("%.1f%% of samples near clipping", frac*100)
+	}
+}

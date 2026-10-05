@@ -80,6 +80,7 @@ func (g *Game) Update() error {
 		return g.autoErr
 	}
 	g.Tick++
+	g.Audio.Update()
 	c := input.Read()
 	if g.auto != nil {
 		c = g.auto.controls(g.Tick)

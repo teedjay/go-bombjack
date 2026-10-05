@@ -251,3 +251,7 @@ and must not edit packages it does not own. To ask for a contract change, leave 
   - Sound: launch whoosh, blast with crackles. X key / gamepad X fires.
 - **2026-10-05 — Tweaks.** Losing a life resets the missile stock to 3. In initials entry, X goes back to the previous letter.
 - **2026-10-05 — Missile crates give +3** (`MissilesPerBox`), capped at 9. A crate picked up at the cap still pays 1000 pts.
+- **2026-10-05 — Initials entry.** Only Z (new `Controls.Confirm`) advances or finishes. Arrows only change the current letter, X goes back, and a 30 s countdown saves the letters on screen when it expires.
+- **2026-10-05 — High-score music.** `internal/audio/sid.go` is a 3-voice SID-style tracker running on 50 Hz frames. It uses PWM, 50 Hz arpeggio chords, a resonant filter sweep on the bass, a kick and snare stolen from the bass and chord voices, hard restart, portamento, delayed vibrato and a lead echo. The tune is an original laid-back A-minor funk piece: a 9 s intro, then a 36 s loop.
+  - It plays from initials entry through the table, and fades out (1.5 s) into the title music via `audio.FadeTo`.
+  - `make music` exports all tracks as WAV files.

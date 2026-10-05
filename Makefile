@@ -1,4 +1,4 @@
-.PHONY: run build test lint sprites shots web serve
+.PHONY: run build test lint sprites shots web serve music
 
 run:
 	go run ./cmd/bombjack
@@ -29,3 +29,7 @@ web:
 
 serve: web
 	python3 -m http.server 8080 -d web
+
+# Render all music to WAV files in music/ for listening
+music:
+	go run ./cmd/musicgen -out music

@@ -20,8 +20,8 @@ inspired by Tehkan's 1984 arcade classic. Jack leaps and floats around four scre
   - smooth-gradient backdrops with parallax layers and drifting clouds
   - particle effects: cartoon bomb explosions with flares and steam, the mummy-transform "poof", and a sparkling title logo
   - a bitmap font
-- **Procedural chiptune** sound effects and music ([internal/audio](internal/audio)).
-- **Top-5 high-score table** with 3-letter initials (left/right picks a letter, jump confirms, X goes back), saved locally.
+- **Procedural chiptune** sound effects and music ([internal/audio](internal/audio)), including a **C64 SID-style high-score tune** with PWM, 50 Hz arpeggios, filter sweeps, voice-stolen drums and a lead echo.
+- **Top-5 high-score table** with 3-letter initials (arrows pick a letter, Z confirms, X goes back; after 30 seconds the letters on screen are saved), saved locally.
 - **Runs in the browser** via a WebAssembly build.
 
 ## Controls
@@ -89,5 +89,6 @@ The `web/` folder is static, so it can be hosted anywhere.
 | `make sprites` | Render all sprites/backgrounds to `assets/` plus an animated preview at `assets/preview/index.html` |
 | `make shots ROUND=2 TICKS=300,900` | Autopilot run that saves screenshots to `shots/` (`ROUND=-1` = title screen, `ROUND=0i` = round 0 with no input) |
 | `make web` / `make serve` | Build or serve the WebAssembly version |
+| `make music` | Render all music to WAV files in `music/` |
 
 The design, architecture and the multi-agent implementation plan are in [PLAN.md](PLAN.md).

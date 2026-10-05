@@ -36,10 +36,12 @@ func Inset(pos Vec, w, h float64) Rect {
 // Controls is one tick of player input, produced by internal/input.
 type Controls struct {
 	Left, Right, Down bool
+	Up                bool // held (arrow up / W); also part of Jump
 	Jump              bool // held
 	JumpPressed       bool // went down this tick
 	Start             bool // pressed this tick
 	Fire              bool // missile button pressed this tick
+	Confirm           bool // Z (or gamepad A) pressed this tick: menu confirm
 }
 
 // Platform is a horizontal run of Len tiles at tile coords (TX,TY).

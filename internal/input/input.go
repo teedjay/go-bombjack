@@ -15,6 +15,8 @@ var (
 	jumpKeys  = []ebiten.Key{ebiten.KeyZ, ebiten.KeySpace, ebiten.KeyArrowUp, ebiten.KeyW}
 	startKeys = []ebiten.Key{ebiten.KeyEnter}
 	fireKeys  = []ebiten.Key{ebiten.KeyX}
+	upKeys    = []ebiten.Key{ebiten.KeyArrowUp, ebiten.KeyW}
+	okKeys    = []ebiten.Key{ebiten.KeyZ}
 )
 
 func anyHeld(keys []ebiten.Key) bool {
@@ -45,6 +47,8 @@ func Read() world.Controls {
 		JumpPressed: anyPressed(jumpKeys),
 		Start:       anyPressed(startKeys),
 		Fire:        anyPressed(fireKeys),
+		Up:          anyHeld(upKeys),
+		Confirm:     anyPressed(okKeys),
 	}
 	for _, id := range ebiten.AppendGamepadIDs(nil) {
 		if !ebiten.IsStandardGamepadLayoutAvailable(id) {
@@ -62,6 +66,8 @@ func Read() world.Controls {
 		c.JumpPressed = c.JumpPressed || pressed(ebiten.StandardGamepadButtonRightBottom)
 		c.Start = c.Start || pressed(ebiten.StandardGamepadButtonCenterRight)
 		c.Fire = c.Fire || pressed(ebiten.StandardGamepadButtonRightLeft)
+		c.Up = c.Up || held(ebiten.StandardGamepadButtonLeftTop)
+		c.Confirm = c.Confirm || pressed(ebiten.StandardGamepadButtonRightBottom)
 	}
 	return c
 }

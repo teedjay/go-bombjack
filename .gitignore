@@ -2,3 +2,4 @@ bin/
 shots/
 web/bombjack.wasm
 web/wasm_exec.js
+music/

@@ -10,6 +10,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 
+	"bombjack/internal/audio"
 	"bombjack/internal/gfx"
 	"bombjack/internal/world"
 )
@@ -26,7 +27,8 @@ const (
 )
 
 func NewTitle(g *Game) *Title {
-	g.Audio.PlayMusic(-1)
+	// coming from the high-score screens the tune fades out first
+	g.Audio.FadeTo(audio.TrackTitle, 90)
 	return &Title{fx: gfx.NewFX(g.Sheet)}
 }
 
@@ -116,6 +118,8 @@ func (o *GameOver) Update(g *Game, c world.Controls) Scene {
 	o.t++
 	if o.t > 240 || (o.t > 60 && (c.Start || c.JumpPressed)) {
 		if g.Qualifies(o.score) {
+			// the SID tune plays through initials entry and the table
+			g.Audio.PlayMusic(audio.TrackHiScore)
 			return &NameEntry{score: o.score, name: []byte("AAA")}
 		}
 		return NewTitle(g)
@@ -129,10 +133,16 @@ func (o *GameOver) Draw(g *Game, screen *ebiten.Image) {
 	g.centerText(screen, fmt.Sprintf("SCORE %07d", o.score), 116, colWhite)
 }
 
+// nameEntryTicks is the time limit for entering initials; when it runs out
+// the letters currently on screen are saved.
+const nameEntryTicks = 30 * 60
+
 const nameChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!. "
 
-// NameEntry lets the player enter 3 initials: left/right cycles the letter,
-// jump or enter confirms it, X goes back to the previous letter.
+// NameEntry lets the player enter 3 initials: the arrows only change the
+// current letter (right/up next, left/down previous), Z confirms it and
+// moves on (ending the entry after the last), X goes back a letter. After
+// 30 seconds the letters on screen are saved as they are.
 type NameEntry struct {
 	score  int
 	name   []byte
@@ -152,9 +162,10 @@ func (n *NameEntry) Update(g *Game, c world.Controls) Scene {
 		return n
 	}
 	dir := 0
-	if c.Left {
+	switch {
+	case c.Left || c.Down:
 		dir = -1
-	} else if c.Right {
+	case c.Right || c.Up:
 		dir = 1
 	}
 	if dir == 0 {
@@ -168,11 +179,16 @@ func (n *NameEntry) Update(g *Game, c world.Controls) Scene {
 		}
 		n.repeat++
 	}
+	if n.t >= nameEntryTicks { // time's up: keep what's on screen
+		g.Insert(string(n.name), n.score)
+		n.done = 1
+		return n
+	}
 	if c.Fire && n.pos > 0 { // X: back to the previous letter
 		n.pos--
 		return n
 	}
-	if n.t > 10 && (c.JumpPressed || c.Start) {
+	if n.t > 10 && c.Confirm {
 		n.pos++
 		if n.pos == len(n.name) {
 			g.Insert(string(n.name), n.score)
@@ -202,8 +218,16 @@ func (n *NameEntry) Draw(g *Game, screen *ebiten.Image) {
 			g.Sheet.Text(screen, "-", x+float64(i*16)+4, 134, colYellow)
 		}
 	}
-	g.centerText(screen, "LEFT/RIGHT  JUMP=OK", 170, colCyan)
-	g.centerText(screen, "X=BACK", 182, colCyan)
+	left := (nameEntryTicks - n.t + 59) / 60
+	if left > 5 || n.t/10%2 == 0 { // blink during the last 5 seconds
+		col := color.Color(colWhite)
+		if left <= 5 {
+			col = colRed
+		}
+		g.centerText(screen, fmt.Sprintf("TIME %02d", left), 150, col)
+	}
+	g.centerText(screen, "ARROWS=LETTER", 170, colCyan)
+	g.centerText(screen, "Z=OK  X=BACK", 182, colCyan)
 }
 
 // drawTable renders the high-score table; the row matching (name, score)
