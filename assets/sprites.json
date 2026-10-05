@@ -1,0 +1,218 @@
+[
+  {
+    "name": "jack_idle",
+    "file": "sprites/jack_idle.png",
+    "w": 16,
+    "h": 16,
+    "frames": 2,
+    "fps": 3,
+    "loop": true
+  },
+  {
+    "name": "jack_run",
+    "file": "sprites/jack_run.png",
+    "w": 16,
+    "h": 16,
+    "frames": 4,
+    "fps": 10,
+    "loop": true
+  },
+  {
+    "name": "jack_jump",
+    "file": "sprites/jack_jump.png",
+    "w": 16,
+    "h": 16,
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+  },
+  {
+    "name": "jack_float",
+    "file": "sprites/jack_float.png",
+    "w": 16,
+    "h": 16,
+    "frames": 2,
+    "fps": 6,
+    "loop": true
+  },
+  {
+    "name": "jack_land",
+    "file": "sprites/jack_land.png",
+    "w": 16,
+    "h": 16,
+    "frames": 1,
+    "fps": 1,
+    "loop": false
+  },
+  {
+    "name": "jack_turn",
+    "file": "sprites/jack_turn.png",
+    "w": 16,
+    "h": 16,
+    "frames": 1,
+    "fps": 1,
+    "loop": false
+  },
+  {
+    "name": "jack_die",
+    "file": "sprites/jack_die.png",
+    "w": 16,
+    "h": 16,
+    "frames": 4,
+    "fps": 10,
+    "loop": true
+  },
+  {
+    "name": "mummy_walk",
+    "file": "sprites/mummy_walk.png",
+    "w": 16,
+    "h": 16,
+    "frames": 2,
+    "fps": 4,
+    "loop": true
+  },
+  {
+    "name": "bird_fly",
+    "file": "sprites/bird_fly.png",
+    "w": 16,
+    "h": 16,
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+  },
+  {
+    "name": "saucer",
+    "file": "sprites/saucer.png",
+    "w": 16,
+    "h": 16,
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+  },
+  {
+    "name": "orb",
+    "file": "sprites/orb.png",
+    "w": 16,
+    "h": 16,
+    "frames": 4,
+    "fps": 6,
+    "loop": true
+  },
+  {
+    "name": "coin",
+    "file": "sprites/coin.png",
+    "w": 16,
+    "h": 16,
+    "frames": 4,
+    "fps": 8,
+    "loop": true
+  },
+  {
+    "name": "bomb",
+    "file": "sprites/bomb.png",
+    "w": 16,
+    "h": 16,
+    "frames": 1,
+    "fps": 1,
+    "loop": true
+  },
+  {
+    "name": "bomb_lit",
+    "file": "sprites/bomb_lit.png",
+    "w": 16,
+    "h": 16,
+    "frames": 3,
+    "fps": 12,
+    "loop": true
+  },
+  {
+    "name": "power_p",
+    "file": "sprites/power_p.png",
+    "w": 16,
+    "h": 16,
+    "frames": 2,
+    "fps": 6,
+    "loop": true
+  },
+  {
+    "name": "power_b",
+    "file": "sprites/power_b.png",
+    "w": 16,
+    "h": 16,
+    "frames": 2,
+    "fps": 6,
+    "loop": true
+  },
+  {
+    "name": "power_e",
+    "file": "sprites/power_e.png",
+    "w": 16,
+    "h": 16,
+    "frames": 2,
+    "fps": 6,
+    "loop": true
+  },
+  {
+    "name": "power_s",
+    "file": "sprites/power_s.png",
+    "w": 16,
+    "h": 16,
+    "frames": 2,
+    "fps": 6,
+    "loop": true
+  },
+  {
+    "name": "sparkle",
+    "file": "sprites/sparkle.png",
+    "w": 16,
+    "h": 16,
+    "frames": 5,
+    "fps": 15,
+    "loop": false
+  },
+  {
+    "name": "explosion",
+    "file": "sprites/explosion.png",
+    "w": 16,
+    "h": 16,
+    "frames": 5,
+    "fps": 12,
+    "loop": false
+  },
+  {
+    "name": "platform_egypt",
+    "file": "sprites/platform_egypt.png",
+    "w": 8,
+    "h": 8,
+    "frames": 3,
+    "fps": 0,
+    "loop": false
+  },
+  {
+    "name": "platform_greece",
+    "file": "sprites/platform_greece.png",
+    "w": 8,
+    "h": 8,
+    "frames": 3,
+    "fps": 0,
+    "loop": false
+  },
+  {
+    "name": "platform_castle",
+    "file": "sprites/platform_castle.png",
+    "w": 8,
+    "h": 8,
+    "frames": 3,
+    "fps": 0,
+    "loop": false
+  },
+  {
+    "name": "platform_city",
+    "file": "sprites/platform_city.png",
+    "w": 8,
+    "h": 8,
+    "frames": 3,
+    "fps": 0,
+    "loop": false
+  }
+]
