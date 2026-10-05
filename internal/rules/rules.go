@@ -41,6 +41,7 @@ const (
 	MissileEvery   = 600  // ticks between missile crate spawns
 	MissileKillPts = 500  // per enemy destroyed (× multiplier)
 	MissileFullPts = 1000 // crate picked up while already holding MaxMissiles
+	MissilesPerBox = 3    // missiles in one crate (capped at MaxMissiles)
 )
 
 const (
@@ -212,7 +213,7 @@ func (s *State) Apply(w *world.World) {
 				s.extraLife(w, e.Pos)
 			case world.PickupM:
 				if s.Missiles < MaxMissiles {
-					s.Missiles++
+					s.Missiles = min(s.Missiles+MissilesPerBox, MaxMissiles)
 				} else {
 					s.add(w, MissileFullPts, e.Pos)
 				}

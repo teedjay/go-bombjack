@@ -250,3 +250,4 @@ and must not edit packages it does not own. To ask for a contract change, leave 
   - FX: an outlined, interpolated smoke trail, and an impact firework (2× boom plus small booms, a rainbow spark ring and spray that crackle, embers, smoke, a white flash and a big shake).
   - Sound: launch whoosh, blast with crackles. X key / gamepad X fires.
 - **2026-10-05 — Tweaks.** Losing a life resets the missile stock to 3. In initials entry, X goes back to the previous letter.
+- **2026-10-05 — Missile crates give +3** (`MissilesPerBox`), capped at 9. A crate picked up at the cap still pays 1000 pts.

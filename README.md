@@ -14,7 +14,7 @@ inspired by Tehkan's 1984 arcade classic. Jack leaps and floats around four scre
   - the **lit-bomb chain** with a round-end bonus. Bombs come in rows and columns that light one by one (rows left to right, columns top to bottom), so you can sweep a whole group in one run or one drop. Before the first pickup, the bomb that starts the chain flashes white as a hint.
   - a bonus meter that releases the **P** power ball, which turns enemies into coins
   - **B** (multiplier), **E** (extra life) and **S** (special) power-ups
-- **Homing missiles:** you start each life with 3 and can hold up to 9; a missile crate drops in regularly. Each missile curves in on the closest enemy along a Bézier arc, wobbling and accelerating, with a huge cartoon smoke trail, and ends in a firework.
+- **Homing missiles:** you start each life with 3 and can hold up to 9; a missile crate (+3 missiles) drops in regularly. Each missile curves in on the closest enemy along a Bézier arc, wobbling and accelerating, with a huge cartoon smoke trail, and ends in a firework.
 - **All graphics are generated in Go code** ([internal/art](internal/art)), with no image files:
   - 16-bit-style pixel-art sprites
   - smooth-gradient backdrops with parallax layers and drifting clouds

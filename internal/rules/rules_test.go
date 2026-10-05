@@ -252,13 +252,24 @@ func TestMissileStock(t *testing.T) {
 	if crates != 1 {
 		t.Fatalf("%d crates on field, want 1", crates)
 	}
-	// picking up caps at MaxMissiles, then pays points
-	for i := 0; i < MaxMissiles-StartMissiles+2; i++ { // 2 over the cap
+	// a crate adds 3, capped at MaxMissiles; at the cap it pays points
+	crate := func() {
 		w.Events = []world.Event{{Kind: world.EvPickupTaken, Pickup: world.PickupM}}
 		s.Apply(w)
 	}
+	crate()
+	if s.Missiles != StartMissiles+MissilesPerBox {
+		t.Fatalf("one crate: %d missiles", s.Missiles)
+	}
+	s.Missiles = MaxMissiles - 1
+	crate() // only room for one more
+	if s.Missiles != MaxMissiles || s.Score != 0 {
+		t.Fatalf("near cap: missiles %d score %d", s.Missiles, s.Score)
+	}
+	crate()
+	crate()
 	if s.Missiles != MaxMissiles || s.Score != 2*MissileFullPts {
-		t.Fatalf("missiles %d score %d", s.Missiles, s.Score)
+		t.Fatalf("at cap: missiles %d score %d", s.Missiles, s.Score)
 	}
 	for i := 0; i < MaxMissiles; i++ {
 		if !s.UseMissile() {
