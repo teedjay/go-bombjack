@@ -115,6 +115,8 @@ type World struct {
 	Systems   []System
 	// FrightTicks > 0 while P is active: enemies are harmless coins.
 	FrightTicks int
+	// Invincible (cheat) makes enemy contact harmless to Jack.
+	Invincible bool
 	// Events emitted this tick; cleared at the start of each Step.
 	Events []Event
 }

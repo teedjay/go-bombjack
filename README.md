@@ -16,7 +16,8 @@ inspired by Tehkan's 1984 arcade classic. Jack leaps and floats around four scre
   - **B** (multiplier), **E** (extra life) and **S** (special) power-ups
 - **All graphics are generated in Go code** ([internal/art](internal/art)), with no image files:
   - 16-bit-style pixel-art sprites
-  - smooth-gradient backdrops
+  - smooth-gradient backdrops with parallax layers and drifting clouds
+  - particle effects (bomb sparks, the mummy-transform "poof", sparkling title logo)
   - a bitmap font
 - **Procedural chiptune** sound effects and music ([internal/audio](internal/audio)).
 - **Top-5 high-score table** with 3-letter initials, saved locally.
@@ -30,9 +31,10 @@ inspired by Tehkan's 1984 arcade classic. Jack leaps and floats around four scre
 | Z / Space / ↑ | Jump. Press again in mid-air to **float** |
 | ↓ | Cancel float (drop faster) |
 | Enter | Start |
-| P | Pause |
+| P / Esc | Pause. Esc again while paused quits to the title |
 | M | Mute |
-| Esc | Quit |
+| I | Cheat: toggle invincibility |
+| Esc (title screen) | Quit |
 
 A standard gamepad also works.
 

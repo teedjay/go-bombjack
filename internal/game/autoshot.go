@@ -49,7 +49,9 @@ func autoshotFromEnv(g *Game) *Autoshot {
 	for range round {
 		d.Rules.NextRound(nil)
 	}
-	g.scene = newRound(g, d.Rules)
+	pl := newRound(g, d.Rules)
+	pl.World.Invincible = true // autopilot never dies, so later events get captured
+	g.scene = pl
 	return a
 }
 

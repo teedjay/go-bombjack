@@ -35,6 +35,7 @@ const popupLife = 45
 type fxItem struct {
 	Animator
 	x, y float64
+	tint *ebiten.ColorScale // nil = untinted
 }
 
 type popup struct {
@@ -48,6 +49,7 @@ type FX struct {
 	sheet  *Sheet
 	items  []fxItem
 	popups []popup
+	parts  []particle
 }
 
 // NewFX creates an effect list drawing from sheet.
@@ -55,7 +57,14 @@ func NewFX(s *Sheet) *FX { return &FX{sheet: s} }
 
 // Spawn starts a one-shot animation with its top-left at (x,y).
 func (f *FX) Spawn(name string, x, y float64) {
-	f.items = append(f.items, fxItem{Animator{Name: name}, x, y})
+	f.items = append(f.items, fxItem{Animator: Animator{Name: name}, x: x, y: y})
+}
+
+// SpawnTinted starts a one-shot animation multiplied by colour c.
+func (f *FX) SpawnTinted(name string, x, y float64, c color.Color) {
+	var cs ebiten.ColorScale
+	cs.ScaleWithColor(c)
+	f.items = append(f.items, fxItem{Animator: Animator{Name: name}, x: x, y: y, tint: &cs})
 }
 
 // Popup starts a floating score popup centred on (x,y).
@@ -83,13 +92,19 @@ func (f *FX) Update() {
 		}
 	}
 	f.popups = f.popups[:n]
+	f.updateParticles()
 }
 
 // Draw renders all effects; offsetY shifts them down (e.g. below the HUD).
 func (f *FX) Draw(dst *ebiten.Image, offsetY float64) {
 	for _, it := range f.items {
-		it.Draw(f.sheet, dst, it.x, it.y+offsetY, false)
+		if it.tint != nil {
+			f.sheet.drawScaled(dst, it.Name, it.T, it.x, it.y+offsetY, false, *it.tint)
+		} else {
+			it.Draw(f.sheet, dst, it.x, it.y+offsetY, false)
+		}
 	}
+	f.drawParticles(dst, offsetY)
 	for _, p := range f.popups {
 		a := 1.0
 		if p.t > popupLife/2 {
@@ -102,4 +117,4 @@ func (f *FX) Draw(dst *ebiten.Image, offsetY float64) {
 }
 
 // Empty reports whether no effects are active.
-func (f *FX) Empty() bool { return len(f.items) == 0 && len(f.popups) == 0 }
+func (f *FX) Empty() bool { return len(f.items) == 0 && len(f.popups) == 0 && len(f.parts) == 0 }

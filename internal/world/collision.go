@@ -76,7 +76,7 @@ func (w *World) contacts() {
 		if w.Frightened() {
 			e.Eat(w)
 			w.Emit(Event{Kind: EvCoinEaten, Pos: e.Pos()})
-		} else if e.Harmful() {
+		} else if e.Harmful() && !w.Invincible {
 			w.Player.Kill(w)
 			w.Emit(Event{Kind: EvPlayerHit, Pos: w.Player.Pos()})
 			return

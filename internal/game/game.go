@@ -33,6 +33,7 @@ var (
 	colYellow = color.RGBA{0xf8, 0xd8, 0x30, 0xff}
 	colCyan   = color.RGBA{0x58, 0xe0, 0xf0, 0xff}
 	colRed    = color.RGBA{0xf8, 0x58, 0x58, 0xff}
+	colPink   = color.RGBA{0xf8, 0x78, 0xb8, 0xff}
 )
 
 // Scene is one screen of the game. Update returns the next scene (or itself).
@@ -63,7 +64,14 @@ func New() *Game {
 
 func (g *Game) Update() error {
 	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
-		return ErrQuit
+		switch g.scene.(type) {
+		case *Title:
+			return ErrQuit
+		case *Play: // Play handles Esc itself (pause, then quit to title)
+		default:
+			g.scene = NewTitle(g)
+			return nil
+		}
 	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyM) {
 		g.Audio.ToggleMute()

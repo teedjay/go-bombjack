@@ -2,44 +2,87 @@ package game
 
 import (
 	"fmt"
+	"image"
 	"image/color"
+	"math"
+	"math/rand/v2"
 	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
 
+	"bombjack/internal/gfx"
 	"bombjack/internal/world"
 )
 
 // Title is the attract screen.
-type Title struct{ t int }
+type Title struct {
+	t  int
+	fx *gfx.FX
+}
+
+const (
+	logoScale = 2
+	logoY     = 40
+)
 
 func NewTitle(g *Game) *Title {
 	g.Audio.PlayMusic(-1)
-	return &Title{}
+	return &Title{fx: gfx.NewFX(g.Sheet)}
+}
+
+// logoOrigin is the screen position of the scaled logo's top-left.
+func logoOrigin(g *Game) (float64, float64) {
+	return float64(ScreenW-g.Sheet.Logo().Bounds().Dx()*logoScale) / 2, logoY
 }
 
 func (t *Title) Update(g *Game, c world.Controls) Scene {
 	t.t++
+	t.fx.Update()
+	// sparkling stars on the logo outline, plus a little falling star dust
+	if edge := g.Sheet.LogoEdge(); len(edge) > 0 && t.t%5 == 0 {
+		lx, ly := logoOrigin(g)
+		pt := edge[rand.IntN(len(edge))]
+		x, y := lx+float64(pt.X*logoScale), ly+float64(pt.Y*logoScale)
+		t.fx.Spawn("twinkle", x-4, y-4)
+		if t.t%15 == 0 {
+			t.fx.Burst(x, y, gfx.BurstSpec{N: 4, Colors: []color.RGBA{colYellow, colWhite},
+				Fade: colOrange, Speed: 0.5, Gravity: 0.03, Life: 50})
+		}
+	}
 	if t.t > 20 && (c.Start || c.JumpPressed) {
 		return NewSession(g)
 	}
 	return t
 }
 
+var titleCycle = []color.Color{colYellow, colOrange, colRed, colPink, colPurple, colCyan, colWhite}
+
 func (t *Title) Draw(g *Game, screen *ebiten.Image) {
-	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(0, HUDH)
-	screen.DrawImage(g.Sheet.Background((t.t/300)%4), op)
+	screen.Fill(colBlack)
+	level := (t.t / 300) % 4
+	g.Sheet.DrawBackground(screen, level, HUDH, math.Sin(float64(t.t)/120), t.t*3)
+
 	logo := g.Sheet.Logo()
-	lw := logo.Bounds().Dx()
-	op = &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(2, 2)
-	op.GeoM.Translate(float64(ScreenW-lw*2)/2, 40)
+	lx, ly := logoOrigin(g)
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Scale(logoScale, logoScale)
+	op.GeoM.Translate(lx, ly)
 	screen.DrawImage(logo, op)
-	g.centerText(screen, fmt.Sprintf("HI %07d", g.HiScore), 4, colYellow)
-	if t.t/30%2 == 0 {
-		g.centerText(screen, "PRESS ENTER", 100, colWhite)
+	// shine: a bright band sweeping across the logo every 4 seconds
+	lw, lh := logo.Bounds().Dx(), logo.Bounds().Dy()
+	if bx := t.t%240*2 - 20; bx > -6 && bx < lw {
+		x0, x1 := max(bx, 0), min(bx+6, lw)
+		band := logo.SubImage(image.Rect(x0, 0, x1, lh)).(*ebiten.Image)
+		op := &ebiten.DrawImageOptions{Blend: ebiten.BlendLighter}
+		op.ColorScale.ScaleAlpha(0.7)
+		op.GeoM.Scale(logoScale, logoScale)
+		op.GeoM.Translate(lx+float64(x0*logoScale), ly)
+		screen.DrawImage(band, op)
 	}
+	t.fx.Draw(screen, 0)
+
+	g.centerText(screen, fmt.Sprintf("HI %07d", g.HiScore), 4, colYellow)
+	g.centerText(screen, "PRESS ENTER", 100, titleCycle[t.t/6%len(titleCycle)])
 	panel(screen, 36, 114, ScreenW-72, 84)
 	if t.t/360%2 == 0 {
 		g.centerText(screen, "ARROWS MOVE  Z JUMP", 140, colCyan)

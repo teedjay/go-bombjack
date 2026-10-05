@@ -230,3 +230,9 @@ and must not edit packages it does not own. To ask for a contract change, leave 
     - Bot clear rate: L1 95%, L2 97%, L3 96%, L4 1%. The low L4 rate is mostly the bot struggling to path to City's high bombs, but L4 needs human playtesting.
   - **Extras:** top-5 high-score table with initials, text panels on title and banners, and a WebAssembly build (`make serve`), verified in a browser.
   - **Open:** human playtest (feel, L4 difficulty), and audio has not been listened to.
+- **2026-10-05 — Optional items done.**
+  - **Parallax backdrops:** a wider far layer shifts with Jack's position, plus a drifting cloud layer (Egypt, Greece, Castle).
+  - **Mummy transform:** a palette-tinted "poof" with a particle shockwave, bandage scraps bouncing on the floor, and rising smoke.
+  - **Particle system** (`gfx.FX.Burst`) also used for bombs, pickups, coins, spawns and death.
+  - **Title screen:** sparkling stars and star dust on the logo, a logo shine sweep, and colour-cycling text.
+  - **Esc** pauses (press again to quit to the title). **I** toggles an invincibility cheat.

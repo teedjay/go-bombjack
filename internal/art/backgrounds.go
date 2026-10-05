@@ -10,11 +10,39 @@ import (
 const (
 	FieldW = 256
 	FieldH = 224
+	// ParallaxMargin is how far (px) the far layer may shift either way; the
+	// far layer is FieldW + 2*ParallaxMargin wide.
+	ParallaxMargin = 16
+	farW           = FieldW + 2*ParallaxMargin
+	m              = ParallaxMargin // x offset into the far layer
 )
 
-// Backgrounds returns the four level backdrops in level order.
+// Layers is one level backdrop split for parallax:
+//   - Far: sky, sun/moon, stars and distant scenery, farW wide
+//   - Clouds: optional (may be nil), FieldW wide, scrolled with wrap-around
+//   - Near: foreground scenery with a transparent sky, FieldW wide, static
+type Layers struct {
+	Far, Clouds, Near *image.RGBA
+}
+
+// BackgroundLayers returns the four level backdrops in level order.
+func BackgroundLayers() []Layers {
+	return []Layers{bgEgypt(), bgGreece(), bgCastle(), bgCity()}
+}
+
+// Backgrounds returns each backdrop flattened at zero parallax (previews).
 func Backgrounds() []*image.RGBA {
-	return []*image.RGBA{bgEgypt(), bgGreece(), bgCastle(), bgCity()}
+	var out []*image.RGBA
+	for _, l := range BackgroundLayers() {
+		c := NewCanvas(FieldW, FieldH)
+		c.Blit(l.Far.SubImage(image.Rect(m, 0, m+FieldW, FieldH)).(*image.RGBA), 0, 0)
+		if l.Clouds != nil {
+			c.Blit(l.Clouds, 0, 0)
+		}
+		c.Blit(l.Near, 0, 0)
+		out = append(out, c.RGBA)
+	}
+	return out
 }
 
 // mix is the backdrop blend: smooth instead of the sprites' ordered dither.
@@ -44,23 +72,56 @@ func ridge(c *Canvas, top func(x int) float64, bottom int, fill func(x, y int) c
 	}
 }
 
-// ------------------------------------------------------------ Egypt ----
-
-func bgEgypt() *image.RGBA {
-	c := NewCanvas(FieldW, FieldH)
-	c.VGradientSmooth(0, 150, rgb(0x281850), rgb(0x682868), rgb(0xd04848), rgb(0xf89040), rgb(0xf8d070))
-	// sun
-	for y := 0; y < 150; y++ {
-		for x := 0; x < FieldW; x++ {
-			dx, dy := float64(x)-180, float64(y)-128
-			d := math.Sqrt(dx*dx + dy*dy)
-			if d < 22 {
-				c.Px(x, y, mix(rgb(0xf8e088), rgb(0xf8f8d0), (22-d)/22))
-			} else if d < 40 {
-				c.Px(x, y, mix(c.At2(x, y), rgb(0xf8d080), (40-d)/18*0.6))
+func cloud(c *Canvas, cx, cy, s float64, top, under color.RGBA) {
+	for _, p := range [][3]float64{{0, 0, 8}, {-10, 3, 6}, {10, 3, 6}, {-4, -4, 6}, {6, -3, 5}} {
+		c.Circle(cx+p[0]*s, cy+p[1]*s, p[2]*s, top)
+	}
+	// shaded underside
+	for y := int(cy + 2*s); y < int(cy+10*s); y++ {
+		for x := int(cx - 20*s); x < int(cx+20*s); x++ {
+			if c.At2(x, y) == top {
+				c.Px(x, y, mix(top, under, float64(y-int(cy+2*s))/(8*s)))
 			}
 		}
 	}
+}
+
+// streak is a long thin sunset cloud with a lit top edge.
+func streak(c *Canvas, cx, cy, w float64, col, hi color.RGBA) {
+	for y := int(cy - 3); y <= int(cy+3); y++ {
+		for x := int(cx - w); x <= int(cx+w); x++ {
+			dx, dy := (float64(x)-cx)/w, (float64(y)-cy)/3
+			if dx*dx+dy*dy <= 1 {
+				c.Px(x, y, mix(hi, col, (dy+1)/2))
+			}
+		}
+	}
+}
+
+// ------------------------------------------------------------ Egypt ----
+
+func bgEgypt() Layers {
+	far := NewCanvas(farW, FieldH)
+	far.VGradientSmooth(0, 170, rgb(0x281850), rgb(0x682868), rgb(0xd04848), rgb(0xf89040), rgb(0xf8d070))
+	// sun with a soft glow
+	for y := 0; y < 170; y++ {
+		for x := 0; x < farW; x++ {
+			dx, dy := float64(x)-(180+m), float64(y)-128
+			d := math.Sqrt(dx*dx + dy*dy)
+			if d < 22 {
+				far.Px(x, y, mix(rgb(0xf8e088), rgb(0xf8f8d0), (22-d)/22))
+			} else if d < 40 {
+				far.Px(x, y, mix(far.At2(x, y), rgb(0xf8d080), (40-d)/18*0.6))
+			}
+		}
+	}
+	clouds := NewCanvas(FieldW, FieldH)
+	streak(clouds, 60, 52, 34, rgb(0xd06078), rgb(0xf8b8b0))
+	streak(clouds, 74, 47, 18, rgb(0xe07888), rgb(0xf8d0c0))
+	streak(clouds, 200, 84, 28, rgb(0xf09070), rgb(0xf8e0b0))
+	streak(clouds, 140, 28, 22, rgb(0x985088), rgb(0xd890b0))
+
+	c := NewCanvas(FieldW, FieldH)
 	// pyramids: lit face left, shaded face right, brick courses
 	pyr := func(cx, base, h float64) {
 		light, shade, dark := rgb(0xe0a050), rgb(0xa86030), rgb(0x683820)
@@ -91,34 +152,28 @@ func bgEgypt() *image.RGBA {
 	// dunes
 	ridge(c, func(x int) float64 { return 164 + 4*math.Sin(float64(x)/23) + 3*math.Sin(float64(x)/7) },
 		FieldH, func(x, y int) color.RGBA {
-			t := float64(y-160) / 64
-			return mix(rgb(0xe8b868), rgb(0xb07838), t)
+			return mix(rgb(0xe8b868), rgb(0xb07838), float64(y-160)/64)
 		})
-	return c.RGBA
+	return Layers{far.RGBA, clouds.RGBA, c.RGBA}
 }
 
 // ----------------------------------------------------------- Greece ----
 
-func cloud(c *Canvas, cx, cy float64, s float64) {
-	for _, p := range [][3]float64{{0, 0, 8}, {-10, 3, 6}, {10, 3, 6}, {-4, -4, 6}, {6, -3, 5}} {
-		c.Circle(cx+p[0]*s, cy+p[1]*s, p[2]*s, White)
-	}
-	// shaded underside
-	for y := int(cy + 2*s); y < int(cy+10*s); y++ {
-		for x := int(cx - 20*s); x < int(cx+20*s); x++ {
-			if c.At2(x, y) == White {
-				c.Px(x, y, mix(White, rgb(0xb8c8e8), float64(y-int(cy+2*s))/(8*s)))
-			}
-		}
-	}
-}
+func bgGreece() Layers {
+	far := NewCanvas(farW, FieldH)
+	far.VGradientSmooth(0, 150, rgb(0x2050c0), rgb(0x4888e8), rgb(0x90c8f8))
+	// distant islands on the horizon
+	ridge(far, func(x int) float64 {
+		return 140 - 8*math.Max(0, math.Sin(float64(x)/30)) - 3*math.Sin(float64(x)/9)
+	}, 150, func(x, y int) color.RGBA { return rgb(0x6890c0) })
 
-func bgGreece() *image.RGBA {
+	clouds := NewCanvas(FieldW, FieldH)
+	under := rgb(0xb8c8e8)
+	cloud(clouds, 50, 40, 1.2, White, under)
+	cloud(clouds, 190, 25, 0.9, White, under)
+	cloud(clouds, 140, 70, 0.7, White, under)
+
 	c := NewCanvas(FieldW, FieldH)
-	c.VGradientSmooth(0, 140, rgb(0x2050c0), rgb(0x4888e8), rgb(0x90c8f8))
-	cloud(c, 50, 40, 1.2)
-	cloud(c, 190, 25, 0.9)
-	cloud(c, 140, 70, 0.7)
 	// sea
 	for y := 140; y < 160; y++ {
 		for x := 0; x < FieldW; x++ {
@@ -163,25 +218,31 @@ func bgGreece() *image.RGBA {
 		c.Circle(float64(tx)+1, 136, 7, rgb(0x406830))
 		c.Circle(float64(tx)-1, 134, 4, rgb(0x689048))
 	}
-	return c.RGBA
+	return Layers{far.RGBA, clouds.RGBA, c.RGBA}
 }
 
 // ----------------------------------------------------------- Castle ----
 
-func bgCastle() *image.RGBA {
-	c := NewCanvas(FieldW, FieldH)
-	c.VGradientSmooth(0, 160, rgb(0x080828), rgb(0x282068), rgb(0x684890), rgb(0xd07898))
-	stars(c, 90, 11, 0.012)
-	c.Circle(40, 36, 13, rgb(0xf8f0c8))
-	c.Circle(46, 32, 12, rgb(0x181040)) // crescent cut
-	// mountains with snow caps
-	for _, m := range [][3]float64{{30, 160, 70}, {110, 160, 85}, {200, 160, 60}, {250, 160, 75}} {
-		cx, base, h := m[0], m[1], m[2]
-		c.Tri(cx-h*1.1, base, cx, base-h, cx+h*1.1, base, rgb(0x383870))
-		c.Tri(cx, base-h, cx+h*1.1, base, cx+h*0.3, base, rgb(0x282858))
-		c.Tri(cx-h*0.25, base-h*0.75, cx, base-h, cx+h*0.25, base-h*0.75, rgb(0xe0e0f8))
+func bgCastle() Layers {
+	far := NewCanvas(farW, FieldH)
+	far.VGradientSmooth(0, 180, rgb(0x080828), rgb(0x282068), rgb(0x684890), rgb(0xd07898))
+	stars(far, 90, 11, 0.012)
+	far.Circle(40+m, 36, 13, rgb(0xf8f0c8))
+	far.Circle(46+m, 32, 12, rgb(0x181040)) // crescent cut
+	// distant mountains with snow caps
+	for _, mt := range [][3]float64{{-10, 160, 60}, {30, 160, 70}, {110, 160, 85}, {200, 160, 60}, {250, 160, 75}, {300, 160, 55}} {
+		cx, base, h := mt[0]+m, mt[1], mt[2]
+		far.Tri(cx-h*1.1, base, cx, base-h, cx+h*1.1, base, rgb(0x383870))
+		far.Tri(cx, base-h, cx+h*1.1, base, cx+h*0.3, base, rgb(0x282858))
+		far.Tri(cx-h*0.25, base-h*0.75, cx, base-h, cx+h*0.25, base-h*0.75, rgb(0xe0e0f8))
 	}
-	// castle
+	far.Rect(0, 160, farW, FieldH-160, rgb(0x282858))
+
+	clouds := NewCanvas(FieldW, FieldH)
+	streak(clouds, 90, 70, 30, rgb(0x504888), rgb(0x9888c8))
+	streak(clouds, 210, 100, 24, rgb(0x806098), rgb(0xc0a0d8))
+
+	c := NewCanvas(FieldW, FieldH)
 	stone, sh, roof := rgb(0xc8c0d8), rgb(0x8880a8), rgb(0x3858a8)
 	tower := func(x, y, w, h int) {
 		c.Rect(x, y, w, h, stone)
@@ -210,27 +271,33 @@ func bgCastle() *image.RGBA {
 	}, FieldH, func(x, y int) color.RGBA {
 		return mix(rgb(0x183828), rgb(0x0c1c18), float64(y-160)/50)
 	})
-	return c.RGBA
+	return Layers{far.RGBA, clouds.RGBA, c.RGBA}
 }
 
 // ------------------------------------------------------------- City ----
 
-func bgCity() *image.RGBA {
-	c := NewCanvas(FieldW, FieldH)
-	c.VGradientSmooth(0, 180, rgb(0x050510), rgb(0x101838), rgb(0x283068), rgb(0x684878))
-	stars(c, 110, 23, 0.015)
-	c.Circle(200, 40, 16, rgb(0xf8f0d0))
-	c.Circle(195, 36, 3, rgb(0xd8d0b0))
-	c.Circle(206, 46, 2, rgb(0xd8d0b0))
-	// back layer of buildings
+func bgCity() Layers {
+	far := NewCanvas(farW, FieldH)
+	far.VGradientSmooth(0, 200, rgb(0x050510), rgb(0x101838), rgb(0x283068), rgb(0x684878))
+	stars(far, 110, 23, 0.015)
+	far.Circle(200+m, 40, 16, rgb(0xf8f0d0))
+	far.Circle(195+m, 36, 3, rgb(0xd8d0b0))
+	far.Circle(206+m, 46, 2, rgb(0xd8d0b0))
+	// distant skyline
 	x := 0
-	for i := 0; x < FieldW; i++ {
+	for i := 0; x < farW; i++ {
 		w := 14 + int(hash(i, 1, 5)*18)
 		h := 50 + int(hash(i, 2, 5)*50)
-		c.Rect(x, 190-h, w, h, rgb(0x283050))
+		far.Rect(x, 190-h, w, h+40, rgb(0x283050))
+		for wy := 194 - h; wy < 188; wy += 8 {
+			if hash(x, wy, 31) < 0.25 {
+				far.Rect(x+w/2, wy, 1, 2, rgb(0x8890b0))
+			}
+		}
 		x += w + 1
 	}
-	// front layer with lit windows
+
+	c := NewCanvas(FieldW, FieldH)
 	x = -4
 	for i := 0; x < FieldW; i++ {
 		w := 20 + int(hash(i, 3, 9)*22)
@@ -263,5 +330,6 @@ func bgCity() *image.RGBA {
 	for sx := 0; sx < FieldW; sx += 16 {
 		c.Rect(sx, 211, 8, 2, rgb(0x707080))
 	}
-	return c.RGBA
+	// no cloud layer at night in the city
+	return Layers{Far: far.RGBA, Near: c.RGBA}
 }

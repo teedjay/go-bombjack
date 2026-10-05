@@ -270,3 +270,59 @@ func PlatformTiles(t LevelTheme) []*image.RGBA {
 	}
 	return out
 }
+
+// twinkle is a 4-point star that grows and fades: logo sparkles.
+func twinkle() []*image.RGBA {
+	sizes := []int{0, 1, 2, 4, 3, 2, 1, 0}
+	var out []*image.RGBA
+	for i, s := range sizes {
+		c := NewCanvas(9, 9)
+		edge := Yellow
+		if i >= 5 {
+			edge = Orange
+		}
+		for d := 1; d <= s; d++ {
+			col := White
+			if d == s && s > 1 {
+				col = edge
+			}
+			c.Px(4+d, 4, col)
+			c.Px(4-d, 4, col)
+			c.Px(4, 4+d, col)
+			c.Px(4, 4-d, col)
+		}
+		if s >= 3 { // small diagonal glints at full size
+			for _, p := range [][2]int{{3, 3}, {5, 3}, {3, 5}, {5, 5}} {
+				c.Px(p[0], p[1], Yellow)
+			}
+		}
+		c.Px(4, 4, White)
+		out = append(out, c.RGBA)
+	}
+	return out
+}
+
+// recolor returns copies of frames with colours swapped per the map: a
+// pixel-exact palette tint, the 16-bit way.
+func recolor(frames []*image.RGBA, swap map[color.RGBA]color.RGBA) []*image.RGBA {
+	var out []*image.RGBA
+	for _, f := range frames {
+		c := image.NewRGBA(f.Bounds())
+		for i := 0; i < len(f.Pix); i += 4 {
+			px := color.RGBA{f.Pix[i], f.Pix[i+1], f.Pix[i+2], f.Pix[i+3]}
+			if to, ok := swap[px]; ok {
+				px = to
+			}
+			c.Pix[i], c.Pix[i+1], c.Pix[i+2], c.Pix[i+3] = px.R, px.G, px.B, px.A
+		}
+		out = append(out, c)
+	}
+	return out
+}
+
+// poof is the mummy transformation cloud: the explosion in magic colours.
+func poof() []*image.RGBA {
+	return recolor(explosion(), map[color.RGBA]color.RGBA{
+		Yellow: Pink, Orange: Purple, DarkRed: DarkPurp, White: rgb(0xf8e8ff),
+	})
+}

@@ -3,6 +3,10 @@
 package gfx
 
 import (
+	"image"
+	"image/color"
+	"math"
+
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"bombjack/internal/art"
@@ -17,10 +21,12 @@ type anim struct {
 // Sheet caches every animation and background as GPU images.
 type Sheet struct {
 	anims map[string]anim
-	bgs   []*ebiten.Image
+	bgs   []bgLayers
 	font  map[rune]*ebiten.Image
 	logo  *ebiten.Image
-	icons map[string]*ebiten.Image
+	// logoEdge lists opaque logo pixels next to transparency (for sparkles).
+	logoEdge []image.Point
+	icons    map[string]*ebiten.Image
 }
 
 // Load converts all art once; call at startup.
@@ -33,14 +39,28 @@ func Load() *Sheet {
 		}
 		s.anims[a.Name] = anim{fr, a.FPS, a.Loop}
 	}
-	for _, bg := range art.Backgrounds() {
-		s.bgs = append(s.bgs, ebiten.NewImageFromImage(bg))
+	for _, l := range art.BackgroundLayers() {
+		b := bgLayers{far: ebiten.NewImageFromImage(l.Far), near: ebiten.NewImageFromImage(l.Near)}
+		if l.Clouds != nil {
+			b.clouds = ebiten.NewImageFromImage(l.Clouds)
+		}
+		s.bgs = append(s.bgs, b)
 	}
 	s.font = map[rune]*ebiten.Image{}
 	for r, g := range art.Font() {
 		s.font[r] = ebiten.NewImageFromImage(g)
 	}
-	s.logo = ebiten.NewImageFromImage(art.Logo())
+	logo := art.Logo()
+	s.logo = ebiten.NewImageFromImage(logo)
+	b := logo.Bounds()
+	opaque := func(x, y int) bool { return image.Pt(x, y).In(b) && logo.RGBAAt(x, y).A != 0 }
+	for y := b.Min.Y; y < b.Max.Y; y++ {
+		for x := b.Min.X; x < b.Max.X; x++ {
+			if opaque(x, y) && (!opaque(x-1, y) || !opaque(x+1, y) || !opaque(x, y-1) || !opaque(x, y+1)) {
+				s.logoEdge = append(s.logoEdge, image.Pt(x-b.Min.X, y-b.Min.Y))
+			}
+		}
+	}
 	s.icons = map[string]*ebiten.Image{}
 	for n, im := range art.Icons() {
 		s.icons[n] = ebiten.NewImageFromImage(im)
@@ -48,7 +68,30 @@ func Load() *Sheet {
 	return s
 }
 
-func (s *Sheet) Background(level int) *ebiten.Image { return s.bgs[level%len(s.bgs)] }
+type bgLayers struct{ far, clouds, near *ebiten.Image }
+
+// DrawBackground draws a level backdrop at y offsetY. parallax in -1..1
+// shifts the far layer (pass e.g. Jack's position relative to the centre);
+// the cloud layer drifts slowly with tick and wraps around.
+func (s *Sheet) DrawBackground(dst *ebiten.Image, level int, offsetY, parallax float64, tick int) {
+	b := s.bgs[level%len(s.bgs)]
+	parallax = math.Max(-1, math.Min(1, parallax))
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(math.Round(-art.ParallaxMargin-parallax*art.ParallaxMargin), offsetY)
+	dst.DrawImage(b.far, op)
+	if b.clouds != nil {
+		w := float64(b.clouds.Bounds().Dx())
+		x := -math.Mod(float64(tick)*0.08, w)
+		for _, dx := range []float64{x, x + w} {
+			op := &ebiten.DrawImageOptions{}
+			op.GeoM.Translate(math.Round(dx), offsetY)
+			dst.DrawImage(b.clouds, op)
+		}
+	}
+	op = &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(0, offsetY)
+	dst.DrawImage(b.near, op)
+}
 
 // Frame returns the frame of animation name to show after tick ticks
 // (60 ticks per second). Unknown names panic: names are a contract.
@@ -71,8 +114,19 @@ func (s *Sheet) FrameCount(name string) int { return len(s.anims[name].frames) }
 
 // Draw draws a frame at (x,y) in screen pixels, mirrored if flip.
 func (s *Sheet) Draw(dst *ebiten.Image, name string, tick int, x, y float64, flip bool) {
+	s.drawScaled(dst, name, tick, x, y, flip, ebiten.ColorScale{})
+}
+
+// DrawTinted is Draw with the frame multiplied by colour c.
+func (s *Sheet) DrawTinted(dst *ebiten.Image, name string, tick int, x, y float64, flip bool, c color.Color) {
+	var cs ebiten.ColorScale
+	cs.ScaleWithColor(c)
+	s.drawScaled(dst, name, tick, x, y, flip, cs)
+}
+
+func (s *Sheet) drawScaled(dst *ebiten.Image, name string, tick int, x, y float64, flip bool, cs ebiten.ColorScale) {
 	img := s.Frame(name, tick)
-	op := &ebiten.DrawImageOptions{}
+	op := &ebiten.DrawImageOptions{ColorScale: cs}
 	if flip {
 		op.GeoM.Scale(-1, 1)
 		op.GeoM.Translate(float64(img.Bounds().Dx()), 0)
@@ -96,3 +150,6 @@ func (s *Sheet) DrawPlatform(dst *ebiten.Image, level int, x, y float64, n int) 
 		dst.DrawImage(t, op)
 	}
 }
+
+// LogoEdge returns logo outline pixels (logo-local coords) for sparkles.
+func (s *Sheet) LogoEdge() []image.Point { return s.logoEdge }

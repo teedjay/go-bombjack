@@ -15,7 +15,20 @@ import (
 	"bombjack/internal/world"
 )
 
-var colBlack = color.RGBA{0x08, 0x06, 0x10, 0xff}
+var (
+	colBlack     = color.RGBA{0x08, 0x06, 0x10, 0xff}
+	colOrange    = color.RGBA{0xf8, 0x88, 0x20, 0xff}
+	colRedDark   = color.RGBA{0x88, 0x18, 0x28, 0xff}
+	colBlue      = color.RGBA{0x28, 0x50, 0xd8, 0xff}
+	colGold      = color.RGBA{0xf8, 0xc0, 0x20, 0xff}
+	colSmoke     = color.RGBA{0x88, 0x90, 0xa8, 0xff}
+	colPurple    = color.RGBA{0xc0, 0x48, 0xd8, 0xff}
+	colMagicHi   = color.RGBA{0xe8, 0xb0, 0xff, 0xff} // tint for the poof's upper cloud
+	colGreen     = color.RGBA{0x70, 0xd8, 0x50, 0xff}
+	colGreenDark = color.RGBA{0x28, 0x78, 0x38, 0xff}
+	colBandage   = color.RGBA{0xe8, 0xdc, 0xb0, 0xff}
+	colBandShade = color.RGBA{0xa8, 0x98, 0x68, 0xff}
+)
 
 type phase int
 
@@ -45,6 +58,7 @@ type Play struct {
 
 	landT, turnT int
 	lastLeft     bool
+	parallax     float64 // smoothed -1..1 from Jack's x position
 }
 
 // NewSession starts a new game at round 0.
@@ -79,12 +93,23 @@ func newRound(g *Game, r *rules.State) *Play {
 }
 
 func (p *Play) Update(g *Game, c world.Controls) Scene {
-	if inpututil.IsKeyJustPressed(ebiten.KeyP) {
+	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
+		if p.paused && g != nil {
+			g.Audio.StopMusic()
+			return NewTitle(g) // Esc twice: abandon the game
+		}
+		p.paused = true
+	} else if inpututil.IsKeyJustPressed(ebiten.KeyP) {
 		p.paused = !p.paused
 	}
 	if p.paused {
 		return p
 	}
+	if inpututil.IsKeyJustPressed(ebiten.KeyI) {
+		p.World.Invincible = !p.World.Invincible
+	}
+	target := (p.Jack.Pos().X + 8 - world.FieldW/2) / (world.FieldW / 2)
+	p.parallax += (target - p.parallax) * 0.04
 	p.t++
 	if p.fx != nil {
 		p.fx.Update()
@@ -162,23 +187,57 @@ func (p *Play) handleEvents() {
 		if p.fx == nil {
 			continue
 		}
+		cx, cy := e.Pos.X+8, e.Pos.Y+8
 		switch e.Kind {
-		case world.EvBombTaken, world.EvPickupTaken:
+		case world.EvBombTaken:
 			p.fx.Spawn("sparkle", e.Pos.X, e.Pos.Y)
-		case world.EvEnemyTransformed, world.EvPlayerHit:
+			spec := gfx.BurstSpec{N: 10, Colors: []color.RGBA{colYellow, colOrange, colWhite},
+				Fade: colRedDark, Speed: 1.6, Gravity: 0.05, Drag: 0.95, Life: 28}
+			if e.Lit {
+				spec.N, spec.Speed, spec.Big = 22, 2.4, 0.3
+			}
+			p.fx.Burst(cx, cy, spec)
+		case world.EvPickupTaken:
+			p.fx.Spawn("sparkle", e.Pos.X, e.Pos.Y)
+			p.fx.Burst(cx, cy, gfx.BurstSpec{N: 24, Colors: []color.RGBA{colCyan, colWhite, colYellow},
+				Fade: colBlue, Speed: 2.2, Drag: 0.94, Life: 40, Big: 0.25})
+		case world.EvCoinEaten:
+			p.fx.Burst(cx, cy, gfx.BurstSpec{N: 14, Colors: []color.RGBA{colYellow, colGold},
+				Fade: colOrange, Speed: 1.8, Gravity: 0.08, Drag: 0.96, Life: 30, UpBias: 1})
+		case world.EvEnemyTransformed:
+			p.poof(cx, cy)
+		case world.EvEnemySpawned:
+			p.fx.Burst(cx, cy, gfx.BurstSpec{N: 10, Colors: []color.RGBA{colSmoke, colPurple},
+				Fade: colBlack, Speed: 0.7, Gravity: -0.03, Drag: 0.95, Life: 40, Big: 0.6})
+		case world.EvPlayerHit:
 			p.fx.Spawn("explosion", e.Pos.X, e.Pos.Y)
+			p.fx.Burst(cx, cy, gfx.BurstSpec{N: 30, Colors: []color.RGBA{colRed, colOrange, colWhite},
+				Fade: colRedDark, Speed: 2.6, Gravity: 0.06, Drag: 0.95, Life: 45, Big: 0.3})
 		case world.EvScore:
 			p.fx.Popup(e.Value, e.Pos.X, e.Pos.Y)
 		}
 	}
 }
 
+// poof is the mummy transformation: a magic-coloured cloud (a palette-
+// tinted explosion), a sparkling shockwave ring, bandage scraps bouncing on
+// the floor and purple smoke curling upwards.
+func (p *Play) poof(cx, cy float64) {
+	floor := float64(world.FieldH - 1)
+	p.fx.Spawn("poof", cx-8, cy-8)
+	p.fx.SpawnTinted("explosion", cx-8, cy-20, colMagicHi)
+	p.fx.Burst(cx, cy-4, gfx.BurstSpec{N: 24, Colors: []color.RGBA{colGreen, colWhite, colMagicHi},
+		Fade: colGreenDark, Speed: 3.2, Drag: 0.9, Life: 26, Ring: true})
+	p.fx.Burst(cx, cy-4, gfx.BurstSpec{N: 26, Colors: []color.RGBA{colBandage, colBandShade},
+		Fade: colBandShade, Speed: 2.6, Gravity: 0.14, Drag: 0.98, Life: 75, Big: 0.5, UpBias: 2.2, Floor: floor})
+	p.fx.Burst(cx, cy-6, gfx.BurstSpec{N: 26, Colors: []color.RGBA{colPurple, colMagicHi, colPink},
+		Fade: colBlack, Speed: 1.0, Gravity: -0.05, Drag: 0.95, Life: 80, Big: 0.9, UpBias: 0.6})
+}
+
 func (p *Play) Draw(g *Game, screen *ebiten.Image) {
 	w, s := p.World, g.Sheet
 	screen.Fill(colBlack)
-	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(0, HUDH)
-	screen.DrawImage(s.Background(w.Level), op)
+	s.DrawBackground(screen, w.Level, HUDH, p.parallax, w.Tick)
 	for _, pl := range w.Platforms {
 		s.DrawPlatform(screen, w.Level, float64(pl.TX*world.Tile), float64(pl.TY*world.Tile+HUDH), pl.Len)
 	}
@@ -223,7 +282,8 @@ func (p *Play) Draw(g *Game, screen *ebiten.Image) {
 	}
 	switch {
 	case p.paused:
-		g.centerText(screen, "PAUSED", 110, colYellow)
+		g.centerText(screen, "PAUSED", 96, colYellow)
+		g.centerText(screen, "ESC AGAIN = QUIT", 110, colWhite)
 	case p.phase == phaseIntro:
 		g.centerText(screen, fmt.Sprintf("ROUND %d", p.Rules.Round+1), 96, colYellow)
 		g.centerText(screen, "GET READY!", 112, colWhite)
@@ -252,6 +312,11 @@ func (p *Play) drawJack(g *Game, screen *ebiten.Image) {
 		return
 	}
 	pos := j.Pos()
+	if p.World.Invincible && j.Alive() {
+		shimmer := []color.Color{colCyan, colWhite, colYellow, colWhite}[p.World.Tick/4%4]
+		g.Sheet.DrawTinted(screen, name, p.World.Tick, pos.X, pos.Y+HUDH, j.FacingLeft(), shimmer)
+		return
+	}
 	g.Sheet.Draw(screen, name, p.World.Tick, pos.X, pos.Y+HUDH, j.FacingLeft())
 }
 
@@ -271,6 +336,9 @@ func (p *Play) drawHUD(g *Game, screen *ebiten.Image) {
 		screen.DrawImage(img, op)
 	}
 	s.Text(screen, fmt.Sprintf("x%d", r.Multiplier), 88, 8, colCyan)
+	if p.World.Invincible && p.World.Tick/20%2 == 0 {
+		s.Text(screen, "INVINCIBLE", 112, 8, colRed)
+	}
 	for i := 0; i < min(r.Lives-1, 6); i++ { // spare lives
 		op := &ebiten.DrawImageOptions{}
 		op.GeoM.Translate(float64(ScreenW-10-i*9), 8)

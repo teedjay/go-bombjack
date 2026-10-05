@@ -171,6 +171,24 @@
     "loop": false
   },
   {
+    "name": "twinkle",
+    "file": "sprites/twinkle.png",
+    "w": 9,
+    "h": 9,
+    "frames": 8,
+    "fps": 14,
+    "loop": false
+  },
+  {
+    "name": "poof",
+    "file": "sprites/poof.png",
+    "w": 16,
+    "h": 16,
+    "frames": 5,
+    "fps": 10,
+    "loop": false
+  },
+  {
     "name": "explosion",
     "file": "sprites/explosion.png",
     "w": 16,
