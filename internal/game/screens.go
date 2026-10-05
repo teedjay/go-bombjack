@@ -83,13 +83,13 @@ func (t *Title) Draw(g *Game, screen *ebiten.Image) {
 
 	g.centerText(screen, fmt.Sprintf("HI %07d", g.HiScore), 4, colYellow)
 	g.centerText(screen, "PRESS ENTER", 100, titleCycle[t.t/6%len(titleCycle)])
-	panel(screen, 36, 114, ScreenW-72, 84)
+	panel(screen, 36, 114, ScreenW-72, 90)
 	if t.t/360%2 == 0 {
-		g.centerText(screen, "ARROWS MOVE  Z JUMP", 140, colCyan)
-		g.centerText(screen, "JUMP IN AIR TO FLOAT", 152, colCyan)
-		g.centerText(screen, "M MUTE  P PAUSE", 164, colCyan)
+		g.centerText(screen, "ARROWS MOVE  Z JUMP", 143, colCyan)
+		g.centerText(screen, "TAP Z IN AIR TO FLY", 155, colCyan)
+		g.centerText(screen, "M MUTE  P PAUSE", 167, colCyan)
 	} else {
-		drawTable(g, screen, 122, "", -1)
+		drawTable(g, screen, 121, "", -1)
 	}
 	// parade of sprites
 	names := []string{"jack_run", "mummy_walk", "bird_fly", "saucer", "orb", "bomb_lit"}
@@ -209,6 +209,6 @@ func drawTable(g *Game, screen *ebiten.Image, y float64, name string, score int)
 		if e.Name == name && e.Score == score {
 			col = colYellow
 		}
-		g.centerText(screen, fmt.Sprintf("%d  %-3s  %07d", i+1, e.Name, e.Score), y+20+float64(i*12), col)
+		g.centerText(screen, fmt.Sprintf("%d  %-3s  %07d", i+1, e.Name, e.Score), y+17+float64(i*11), col)
 	}
 }

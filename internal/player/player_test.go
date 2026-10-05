@@ -62,12 +62,19 @@ func TestFloatCap(t *testing.T) {
 		t.Fatalf("state %v, want Float", j.State())
 	}
 	prev := j.Pos().Y
-	for i := 0; i < 100 && j.State() == Float; i++ {
+	for i := 0; i < j.T.FloatHold-1; i++ {
 		w.Step(world.Controls{})
 		if d := j.Pos().Y - prev; d > j.T.FloatMaxFall+1e-9 {
-			t.Fatalf("float descent %v exceeds cap", d)
+			t.Fatalf("float descent %v exceeds cap during hold", d)
 		}
 		prev = j.Pos().Y
+	}
+	// after the hold, gravity takes over again and the float ends
+	for i := 0; i < j.T.FloatDecay+2; i++ {
+		w.Step(world.Controls{})
+	}
+	if j.State() == Float || j.vel.Y <= j.T.FloatMaxFall {
+		t.Fatalf("float should have expired: state %v vy %v", j.State(), j.vel.Y)
 	}
 	// Down cancels the float.
 	w, j = newWorld()
@@ -186,5 +193,32 @@ func TestDeath(t *testing.T) {
 	j.Respawn(world.Vec{X: 10, Y: world.FloorY})
 	if !j.Alive() || j.Done() {
 		t.Error("respawn failed")
+	}
+}
+
+// Repeated taps keep Jack aloft much longer than a single float.
+func TestFloatRepeatedTaps(t *testing.T) {
+	airtime := func(tapEvery int) int {
+		w, j := newWorld()
+		w.Step(world.Controls{})
+		w.Step(world.Controls{Jump: true, JumpPressed: true})
+		for i := 1; i < 1000; i++ {
+			press := tapEvery > 0 && i >= 20 && (i-20)%tapEvery == 0
+			if i == 20 {
+				press = true
+			}
+			w.Step(world.Controls{JumpPressed: press, Jump: press})
+			if j.State() == Idle || j.State() == Run {
+				return i
+			}
+		}
+		return 1000
+	}
+	once, tapping := airtime(0), airtime(12)
+	if tapping < once*3 {
+		t.Fatalf("tapping airtime %d should far exceed single float %d", tapping, once)
+	}
+	if every := airtime(0); every > 140 {
+		t.Fatalf("a single float keeps Jack up too long: %d ticks", every)
 	}
 }

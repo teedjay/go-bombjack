@@ -29,11 +29,18 @@ type Tuning struct {
 	Gravity      float64
 	MaxFall      float64
 	FloatMaxFall float64
+	// A float lasts FloatHold ticks at FloatMaxFall, then over FloatDecay
+	// ticks the fall cap ramps back up to MaxFall. Each new jump press in
+	// the air restarts it, so staying aloft takes repeated tapping.
+	FloatHold  int
+	FloatDecay int
+	FloatLift  float64 // vertical velocity set by each float tap (negative = up)
 }
 
 var Default = Tuning{
 	RunSpeed: 1.5, JumpImpulse: -6.0, JumpHoldMax: 14,
 	Gravity: 0.25, MaxFall: 3.5, FloatMaxFall: 0.6,
+	FloatHold: 18, FloatDecay: 24, FloatLift: -1.1,
 }
 
 // Jack implements world.Player.
@@ -47,7 +54,7 @@ type Jack struct {
 	jumping    bool // still in the held-jump rise phase
 	holdTicks  int
 	floating   bool
-	floatUsed  bool
+	floatTicks int // ticks since the last float press
 	deathTicks int
 }
 
@@ -85,12 +92,12 @@ func (j *Jack) Update(w *world.World, c world.Controls) {
 		if j.onFloor {
 			j.vel.Y = j.T.JumpImpulse
 			j.jumping, j.holdTicks = true, 0
-			j.floating, j.floatUsed = false, false
+			j.floating = false
 			j.onFloor = false
 			w.Emit(world.Event{Kind: world.EvJump, Pos: j.pos})
-		} else if !j.floatUsed {
-			j.vel.Y = 0
-			j.jumping, j.floating, j.floatUsed = false, true, true
+		} else {
+			j.vel.Y = j.T.FloatLift
+			j.jumping, j.floating, j.floatTicks = false, true, 0
 			w.Emit(world.Event{Kind: world.EvFloat, Pos: j.pos})
 		}
 	}
@@ -106,7 +113,11 @@ func (j *Jack) Update(w *world.World, c world.Controls) {
 	}
 	limit := j.T.MaxFall
 	if j.floating {
-		limit = j.T.FloatMaxFall
+		j.floatTicks++
+		limit = j.floatLimit()
+		if limit >= j.T.MaxFall {
+			j.floating = false // float expired: back to a normal fall
+		}
 	}
 	if j.vel.Y > limit {
 		j.vel.Y = limit
@@ -123,7 +134,7 @@ func (j *Jack) Update(w *world.World, c world.Controls) {
 		if !j.onFloor {
 			w.Emit(world.Event{Kind: world.EvLand, Pos: j.pos})
 		}
-		j.jumping, j.floating, j.floatUsed = false, false, false
+		j.jumping, j.floating = false, false
 	}
 	j.onFloor = ground
 
@@ -173,4 +184,15 @@ func (j *Jack) Anim() string {
 		return "jack_die"
 	}
 	return "jack_idle"
+}
+
+// floatLimit is the current fall-speed cap while floating: FloatMaxFall
+// for FloatHold ticks, then ramping linearly to MaxFall over FloatDecay.
+func (j *Jack) floatLimit() float64 {
+	t := j.floatTicks - j.T.FloatHold
+	if t <= 0 {
+		return j.T.FloatMaxFall
+	}
+	f := min(float64(t)/float64(max(j.T.FloatDecay, 1)), 1)
+	return j.T.FloatMaxFall + (j.T.MaxFall-j.T.FloatMaxFall)*f
 }

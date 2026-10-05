@@ -236,3 +236,7 @@ and must not edit packages it does not own. To ask for a contract change, leave 
   - **Particle system** (`gfx.FX.Burst`) also used for bombs, pickups, coins, spawns and death.
   - **Title screen:** sparkling stars and star dust on the logo, a logo shine sweep, and colour-cycling text.
   - **Esc** pauses (press again to quit to the title). **I** toggles an invincibility cheat.
+- **2026-10-05 — Feel pass.**
+  - **Flying:** each mid-air jump tap gives a small lift (`FloatLift`) and a short slow-fall (`FloatHold`). After that, gravity ramps back over `FloatDecay`, so staying up needs repeated tapping.
+  - **Bomb pickups:** a cartoon "boom" (32px), trailing flares, bouncing embers, swelling steam puffs, and a screen shake. Lit bombs get a bigger version.
+  - **Title screen:** the high-score table fits inside its panel.

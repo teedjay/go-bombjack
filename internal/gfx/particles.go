@@ -18,6 +18,11 @@ type particle struct {
 	from, to     color.RGBA // colour at birth -> colour at death
 	size         float32
 	floor        float64 // bounce at this y (0 = no floor)
+	trail        float64 // draw a streak this many ticks of velocity long
+	grow         float32 // size increase per tick (smoke puffs swell)
+	round        bool    // draw as a disc instead of a square
+	wobble       float64 // sideways sine drift amplitude (steam)
+	phase        float64
 }
 
 // BurstSpec describes a radial particle burst.
@@ -33,6 +38,11 @@ type BurstSpec struct {
 	UpBias  float64      // extra upward initial velocity
 	Ring    bool         // evenly spaced angles at full speed (shockwave)
 	Floor   float64      // particles bounce at this y (0 = no floor)
+	Size    float32      // base size in px (default 1; Big doubles it)
+	Trail   float64      // flare streak length in ticks of velocity
+	Grow    float32      // size growth per tick
+	Round   bool         // discs instead of squares (smoke)
+	Wobble  float64      // sideways drift amplitude (steam)
 }
 
 // Burst emits particles centred on (x,y) in playfield coordinates.
@@ -43,9 +53,9 @@ func (f *FX) Burst(x, y float64, s BurstSpec) {
 		if s.Ring {
 			a, sp = float64(i)/float64(s.N)*2*math.Pi, s.Speed
 		}
-		size := float32(1)
+		size := max(s.Size, 1)
 		if rand.Float64() < s.Big {
-			size = 2
+			size *= 2
 		}
 		drag := s.Drag
 		if drag == 0 {
@@ -58,6 +68,8 @@ func (f *FX) Burst(x, y float64, s BurstSpec) {
 			life: int(float64(s.Life) * (0.6 + 0.4*rand.Float64())),
 			from: s.Colors[rand.IntN(len(s.Colors))], to: s.Fade,
 			size: size, floor: s.Floor,
+			trail: s.Trail, grow: s.Grow, round: s.Round,
+			wobble: s.Wobble, phase: rand.Float64() * 2 * math.Pi,
 		})
 	}
 }
@@ -69,8 +81,9 @@ func (f *FX) updateParticles() {
 		p.t++
 		p.vx *= p.drag
 		p.vy = p.vy*p.drag + p.gravity
-		p.x += p.vx
+		p.x += p.vx + math.Sin(p.phase+float64(p.t)*0.15)*p.wobble*0.1
 		p.y += p.vy
+		p.size += p.grow
 		if p.floor > 0 && p.y > p.floor && p.vy > 0 {
 			p.y, p.vy, p.vx = p.floor, -p.vy*0.45, p.vx*0.7
 		}
@@ -96,6 +109,15 @@ func (f *FX) drawParticles(dst *ebiten.Image, offsetY float64) {
 		}
 		// premultiplied alpha for ebiten
 		c.R, c.G, c.B, c.A = uint8(float64(c.R)*alpha), uint8(float64(c.G)*alpha), uint8(float64(c.B)*alpha), uint8(255*alpha)
-		vector.FillRect(dst, float32(math.Round(p.x)), float32(math.Round(p.y+offsetY)), p.size, p.size, c, false)
+		x, y := float32(math.Round(p.x)), float32(math.Round(p.y+offsetY))
+		switch {
+		case p.trail > 0:
+			tx, ty := float32(p.x-p.vx*p.trail), float32(p.y+offsetY-p.vy*p.trail)
+			vector.StrokeLine(dst, tx, ty, x, y, p.size, c, false)
+		case p.round:
+			vector.FillCircle(dst, x, y, p.size/2, c, false)
+		default:
+			vector.FillRect(dst, x, y, p.size, p.size, c, false)
+		}
 	}
 }

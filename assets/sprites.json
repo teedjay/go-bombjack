@@ -189,6 +189,15 @@
     "loop": false
   },
   {
+    "name": "boom",
+    "file": "sprites/boom.png",
+    "w": 32,
+    "h": 32,
+    "frames": 7,
+    "fps": 14,
+    "loop": false
+  },
+  {
     "name": "explosion",
     "file": "sprites/explosion.png",
     "w": 16,

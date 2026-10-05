@@ -17,7 +17,7 @@ inspired by Tehkan's 1984 arcade classic. Jack leaps and floats around four scre
 - **All graphics are generated in Go code** ([internal/art](internal/art)), with no image files:
   - 16-bit-style pixel-art sprites
   - smooth-gradient backdrops with parallax layers and drifting clouds
-  - particle effects (bomb sparks, the mummy-transform "poof", sparkling title logo)
+  - particle effects: cartoon bomb explosions with flares and steam, the mummy-transform "poof", and a sparkling title logo
   - a bitmap font
 - **Procedural chiptune** sound effects and music ([internal/audio](internal/audio)).
 - **Top-5 high-score table** with 3-letter initials, saved locally.
@@ -28,7 +28,7 @@ inspired by Tehkan's 1984 arcade classic. Jack leaps and floats around four scre
 | Key | Action |
 |---|---|
 | ← → (or A / D) | Move |
-| Z / Space / ↑ | Jump. Press again in mid-air to **float** |
+| Z / Space / ↑ | Jump. Tap repeatedly in mid-air to **fly**: each tap gives a little lift, then gravity takes over |
 | ↓ | Cancel float (drop faster) |
 | Enter | Start |
 | P / Esc | Pause. Esc again while paused quits to the title |

@@ -35,6 +35,7 @@ func Animations() []Anim {
 		Anim{Name: "sparkle", Frames: sparkle(), FPS: 15, Loop: false},
 		Anim{Name: "twinkle", Frames: twinkle(), FPS: 14, Loop: false},
 		Anim{Name: "poof", Frames: poof(), FPS: 10, Loop: false},
+		Anim{Name: "boom", Frames: boom(), FPS: 14, Loop: false},
 		Anim{Name: "explosion", Frames: explosion(), FPS: 12, Loop: false},
 	)
 	for _, t := range Themes {

@@ -3,6 +3,7 @@ package game
 import (
 	"fmt"
 	"image/color"
+	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
@@ -28,6 +29,8 @@ var (
 	colGreenDark = color.RGBA{0x28, 0x78, 0x38, 0xff}
 	colBandage   = color.RGBA{0xe8, 0xdc, 0xb0, 0xff}
 	colBandShade = color.RGBA{0xa8, 0x98, 0x68, 0xff}
+	colSteam     = color.RGBA{0xd8, 0xdc, 0xe8, 0xff}
+	colSmokeDark = color.RGBA{0x48, 0x4c, 0x60, 0xff}
 )
 
 type phase int
@@ -59,6 +62,9 @@ type Play struct {
 	landT, turnT int
 	lastLeft     bool
 	parallax     float64 // smoothed -1..1 from Jack's x position
+	shake        int     // ticks of screen shake left
+	shakeAmp     float64
+	canvas       *ebiten.Image // offscreen frame, drawn shaken to the screen
 }
 
 // NewSession starts a new game at round 0.
@@ -105,6 +111,7 @@ func (p *Play) Update(g *Game, c world.Controls) Scene {
 	if p.paused {
 		return p
 	}
+	p.shake = max(p.shake-1, 0)
 	if inpututil.IsKeyJustPressed(ebiten.KeyI) {
 		p.World.Invincible = !p.World.Invincible
 	}
@@ -190,13 +197,7 @@ func (p *Play) handleEvents() {
 		cx, cy := e.Pos.X+8, e.Pos.Y+8
 		switch e.Kind {
 		case world.EvBombTaken:
-			p.fx.Spawn("sparkle", e.Pos.X, e.Pos.Y)
-			spec := gfx.BurstSpec{N: 10, Colors: []color.RGBA{colYellow, colOrange, colWhite},
-				Fade: colRedDark, Speed: 1.6, Gravity: 0.05, Drag: 0.95, Life: 28}
-			if e.Lit {
-				spec.N, spec.Speed, spec.Big = 22, 2.4, 0.3
-			}
-			p.fx.Burst(cx, cy, spec)
+			p.bombBoom(cx, cy, e.Lit)
 		case world.EvPickupTaken:
 			p.fx.Spawn("sparkle", e.Pos.X, e.Pos.Y)
 			p.fx.Burst(cx, cy, gfx.BurstSpec{N: 24, Colors: []color.RGBA{colCyan, colWhite, colYellow},
@@ -219,6 +220,30 @@ func (p *Play) handleEvents() {
 	}
 }
 
+// bombBoom is the exaggerated cartoon explosion for collecting a bomb: a
+// big spiky "boom", flares streaking out on arcs, bouncing embers, steam
+// puffs swelling as they rise, and a short screen shake. Lit bombs go bigger.
+func (p *Play) bombBoom(cx, cy float64, lit bool) {
+	floor := float64(world.FieldH - 1)
+	scale := 1.0
+	if lit {
+		scale = 1.6
+	}
+	n := func(base int) int { return int(float64(base) * scale) }
+	p.fx.Spawn("boom", cx-16, cy-16)
+	p.fx.Burst(cx, cy, gfx.BurstSpec{N: n(14), Colors: []color.RGBA{colWhite, colYellow},
+		Fade: colOrange, Speed: 3.8 * scale, Gravity: 0.1, Drag: 0.965, Life: 40,
+		Size: 2, Trail: 3, UpBias: 1})
+	p.fx.Burst(cx, cy, gfx.BurstSpec{N: n(10), Colors: []color.RGBA{colOrange, colYellow},
+		Fade: colRedDark, Speed: 2.2, Gravity: 0.12, Drag: 0.98, Life: 55, UpBias: 1.5, Floor: floor,
+		Size: 2})
+	p.fx.Burst(cx, cy-2, gfx.BurstSpec{N: n(9), Colors: []color.RGBA{colSteam, colWhite},
+		Fade: colSmokeDark, Speed: 0.8, Gravity: -0.045, Drag: 0.96, Life: 75,
+		Size: 3, Grow: 0.09, Round: true, UpBias: 0.7, Wobble: 3})
+	p.shake = max(p.shake, n(8))
+	p.shakeAmp = 1 + float64(n(1))
+}
+
 // poof is the mummy transformation: a magic-coloured cloud (a palette-
 // tinted explosion), a sparkling shockwave ring, bandage scraps bouncing on
 // the floor and purple smoke curling upwards.
@@ -234,7 +259,24 @@ func (p *Play) poof(cx, cy float64) {
 		Fade: colBlack, Speed: 1.0, Gravity: -0.05, Drag: 0.95, Life: 80, Big: 0.9, UpBias: 0.6})
 }
 
-func (p *Play) Draw(g *Game, screen *ebiten.Image) {
+func (p *Play) Draw(g *Game, dst *ebiten.Image) {
+	if p.canvas == nil {
+		p.canvas = ebiten.NewImage(ScreenW, ScreenH)
+	}
+	p.drawFrame(g, p.canvas)
+	dst.Fill(colBlack)
+	op := &ebiten.DrawImageOptions{}
+	if p.shake > 0 && !p.paused {
+		// jitter alternates direction each tick and eases out
+		a := p.shakeAmp * float64(p.shake) / 8
+		dx := math.Round(a * float64(1-2*(p.World.Tick%2)))
+		dy := math.Round(a * 0.6 * float64(1-2*((p.World.Tick/2)%2)))
+		op.GeoM.Translate(dx, dy)
+	}
+	dst.DrawImage(p.canvas, op)
+}
+
+func (p *Play) drawFrame(g *Game, screen *ebiten.Image) {
 	w, s := p.World, g.Sheet
 	screen.Fill(colBlack)
 	s.DrawBackground(screen, w.Level, HUDH, p.parallax, w.Tick)

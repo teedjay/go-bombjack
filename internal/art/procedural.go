@@ -326,3 +326,67 @@ func poof() []*image.RGBA {
 		Yellow: Pink, Orange: Purple, DarkRed: DarkPurp, White: rgb(0xf8e8ff),
 	})
 }
+
+// starShape fills a spiky cartoon burst: radius r with n spikes; layers of
+// colour from outside in (each at the given fraction of the radius).
+func starShape(c *Canvas, cx, cy, r float64, n int, rot float64, cols []color.RGBA, fracs []float64) {
+	for y := 0; y < c.H; y++ {
+		for x := 0; x < c.W; x++ {
+			dx, dy := float64(x)+0.5-cx, float64(y)+0.5-cy
+			d := math.Sqrt(dx*dx + dy*dy)
+			a := math.Atan2(dy, dx) + rot
+			spike := math.Pow(math.Abs(math.Cos(a*float64(n)/2)), 3)
+			edge := r * (0.62 + 0.38*spike)
+			for i, f := range fracs {
+				if d <= edge*f {
+					c.Px(x, y, cols[i])
+				}
+			}
+		}
+	}
+}
+
+// puffs draws a cluster of round smoke puffs with shading.
+func puffs(c *Canvas, cx, cy, spread, size float64, seed int, base, shade, hi color.RGBA) {
+	for i := 0; i < 6; i++ {
+		a := float64(i)/6*2*math.Pi + hash(i, seed, 3)
+		px := cx + math.Cos(a)*spread
+		py := cy + math.Sin(a)*spread*0.8
+		r := size * (0.75 + 0.5*hash(i, seed, 4))
+		c.Circle(px, py, r, shade)
+		c.Circle(px-r*0.2, py-r*0.25, r*0.8, base)
+		c.Circle(px-r*0.4, py-r*0.45, r*0.3, hi)
+	}
+}
+
+// boom is the exaggerated cartoon bomb-pickup explosion (32x32).
+func boom() []*image.RGBA {
+	const s = 32
+	fire := []color.RGBA{DarkRed, Orange, Yellow, White}
+	var out []*image.RGBA
+	frame := func(draw func(c *Canvas)) {
+		c := NewCanvas(s, s)
+		draw(c)
+		c.Outline(Ink)
+		out = append(out, c.RGBA)
+	}
+	// 0-2: white-hot flash growing into a big spiky star
+	frame(func(c *Canvas) { starShape(c, 16, 16, 7, 8, 0, []color.RGBA{Yellow, White}, []float64{1, 0.7}) })
+	frame(func(c *Canvas) { starShape(c, 16, 16, 12, 10, 0.3, fire, []float64{1, 0.85, 0.6, 0.35}) })
+	frame(func(c *Canvas) { starShape(c, 16, 16, 15, 10, 0.1, fire, []float64{1, 0.8, 0.5, 0.2}) })
+	// 3: fireball breaking up into burning puffs
+	frame(func(c *Canvas) {
+		puffs(c, 16, 16, 7, 6, 1, Orange, DarkRed, Yellow)
+		c.Circle(16, 16, 5, Yellow)
+		c.Circle(15, 15, 2, White)
+	})
+	// 4-6: grey smoke clouds billowing out and thinning
+	smoke, smokeShade, smokeHi := rgb(0x9098b0), rgb(0x585e78), rgb(0xd0d4e0)
+	frame(func(c *Canvas) {
+		puffs(c, 16, 15, 8, 6, 2, smoke, smokeShade, smokeHi)
+		c.Circle(16, 16, 3, Orange)
+	})
+	frame(func(c *Canvas) { puffs(c, 16, 13, 10, 5, 3, smoke, smokeShade, smokeHi) })
+	frame(func(c *Canvas) { puffs(c, 16, 11, 11, 3, 4, smoke, smokeShade, smokeHi) })
+	return out
+}
