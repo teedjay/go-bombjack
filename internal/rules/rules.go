@@ -19,6 +19,7 @@ type State struct {
 	LitCount   int // lit bombs taken this round
 	Round      int // 0-based, increases forever
 	CoinCombo  int // index into coin value table during one P
+	Missiles   int // homing missiles in stock (0..MaxMissiles)
 
 	// LitOrder is the level's lit-bomb sequence (set by NewForLevel/NextRound).
 	LitOrder []int
@@ -28,9 +29,19 @@ type State struct {
 	nextB    int  // next score threshold for a B pickup
 	eGiven   [2]bool
 	bonusPts int // last round-clear bonus awarded
+	mTimer   int // ticks since the last missile crate spawned
 }
 
 var coinValues = [...]int{100, 200, 300, 500, 800, 1200, 2000}
+
+// Missile stock and scoring.
+const (
+	StartMissiles  = 3
+	MaxMissiles    = 9
+	MissileEvery   = 600  // ticks between missile crate spawns
+	MissileKillPts = 500  // per enemy destroyed (× multiplier)
+	MissileFullPts = 1000 // crate picked up while already holding MaxMissiles
+)
 
 const (
 	bStep = 30000
@@ -38,7 +49,18 @@ const (
 	eAt1  = 150000
 )
 
-func New() *State { return &State{Lives: 3, Multiplier: 1, nextB: bStep} }
+func New() *State {
+	return &State{Lives: 3, Multiplier: 1, Missiles: StartMissiles, nextB: bStep}
+}
+
+// UseMissile takes one missile from stock; false when empty.
+func (s *State) UseMissile() bool {
+	if s.Missiles <= 0 {
+		return false
+	}
+	s.Missiles--
+	return true
+}
 
 // NewForLevel creates a fresh game state for round (0-based) using the level's
 // LitOrder.
@@ -188,6 +210,17 @@ func (s *State) Apply(w *world.World) {
 			case world.PickupS:
 				s.add(w, 100000, e.Pos)
 				s.extraLife(w, e.Pos)
+			case world.PickupM:
+				if s.Missiles < MaxMissiles {
+					s.Missiles++
+				} else {
+					s.add(w, MissileFullPts, e.Pos)
+				}
+			}
+		case world.EvMissileHit:
+			if e.Index == 1 {
+				s.add(w, MissileKillPts*s.Multiplier, e.Pos)
+				s.gainMeter(w, 4)
 			}
 		case world.EvCoinEaten:
 			v := coinValues[min(s.CoinCombo, len(coinValues)-1)]
@@ -198,6 +231,21 @@ func (s *State) Apply(w *world.World) {
 			if s.Lives > 0 {
 				s.Lives--
 			}
+			s.Missiles = StartMissiles // every new life starts with a fresh stock
+		}
+	}
+	// a missile crate drops in regularly (one on the field at a time)
+	s.mTimer++
+	if s.mTimer >= MissileEvery {
+		s.mTimer = 0
+		onField := false
+		for _, p := range w.Pickups {
+			if p.Kind == world.PickupM {
+				onField = true
+			}
+		}
+		if !onField {
+			spawnPickup(w, world.PickupM)
 		}
 	}
 	for s.Score >= s.nextB {

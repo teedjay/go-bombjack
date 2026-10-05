@@ -85,9 +85,10 @@ func (t *Title) Draw(g *Game, screen *ebiten.Image) {
 	g.centerText(screen, "PRESS ENTER", 100, titleCycle[t.t/6%len(titleCycle)])
 	panel(screen, 36, 114, ScreenW-72, 90)
 	if t.t/360%2 == 0 {
-		g.centerText(screen, "ARROWS MOVE  Z JUMP", 143, colCyan)
-		g.centerText(screen, "TAP Z IN AIR TO FLY", 155, colCyan)
-		g.centerText(screen, "M MUTE  P PAUSE", 167, colCyan)
+		g.centerText(screen, "ARROWS MOVE  Z JUMP", 137, colCyan)
+		g.centerText(screen, "TAP Z IN AIR TO FLY", 149, colCyan)
+		g.centerText(screen, "X FIRE HOMING MISSILE", 161, colCyan)
+		g.centerText(screen, "M MUTE  P PAUSE", 173, colCyan)
 	} else {
 		drawTable(g, screen, 121, "", -1)
 	}
@@ -131,7 +132,7 @@ func (o *GameOver) Draw(g *Game, screen *ebiten.Image) {
 const nameChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!. "
 
 // NameEntry lets the player enter 3 initials: left/right cycles the letter,
-// jump or enter confirms it.
+// jump or enter confirms it, X goes back to the previous letter.
 type NameEntry struct {
 	score  int
 	name   []byte
@@ -167,6 +168,10 @@ func (n *NameEntry) Update(g *Game, c world.Controls) Scene {
 		}
 		n.repeat++
 	}
+	if c.Fire && n.pos > 0 { // X: back to the previous letter
+		n.pos--
+		return n
+	}
 	if n.t > 10 && (c.JumpPressed || c.Start) {
 		n.pos++
 		if n.pos == len(n.name) {
@@ -198,6 +203,7 @@ func (n *NameEntry) Draw(g *Game, screen *ebiten.Image) {
 		}
 	}
 	g.centerText(screen, "LEFT/RIGHT  JUMP=OK", 170, colCyan)
+	g.centerText(screen, "X=BACK", 182, colCyan)
 }
 
 // drawTable renders the high-score table; the row matching (name, score)

@@ -19,6 +19,8 @@ const (
 	EvRoundClear       // emitted by rules when all bombs are taken
 	EvExtraLife        // emitted by rules
 	EvScore            // emitted by rules: Value points at Pos (score popup)
+	EvMissileFired     // a homing missile launched from Pos
+	EvMissileHit       // a missile exploded at Pos; Index = 1 if it destroyed an enemy
 )
 
 type Event struct {

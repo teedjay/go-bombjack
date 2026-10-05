@@ -68,6 +68,7 @@ func (a *Autoshot) controls(tick int) world.Controls {
 		Right:       phase >= 120 && phase < 220,
 		Jump:        tick%90 < 20,
 		JumpPressed: tick%90 == 0 || tick%90 == 45,
+		Fire:        tick%240 == 200,
 	}
 }
 

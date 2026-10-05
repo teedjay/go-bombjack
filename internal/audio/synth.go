@@ -234,7 +234,9 @@ const (
 	sfxDied
 	sfxClear
 	sfxExtra
-	sfxCoin0 // sfxCoin0 .. sfxCoin0+coinSteps-1
+	sfxLaunch // homing missile whoosh
+	sfxBlast  // missile firework explosion
+	sfxCoin0  // sfxCoin0 .. sfxCoin0+coinSteps-1
 )
 
 const coinSteps = 8
@@ -278,5 +280,14 @@ func renderSFX() [][]float32 {
 	s[sfxDied] = died
 	s[sfxClear] = seq(arp(Pulse25, 0.25, 0.09, "C5", "E5", "G5", "C6", "G5", "C6", "E6"), Sweep(Pulse25, 1568, 1568, 0.4, 0.25, ADSR{0.005, 0.1, 0.6, 0.15}))
 	s[sfxExtra] = arp(Square, 0.2, 0.07, "G5", "B5", "D6", "G6", "B6", "D7")
+	launch := Sweep(Noise, 0, 0, 0.35, 0.22, ADSR{0.01, 0.2, 0.4, 0.12})
+	launch = Mix(launch, Sweep(Square, 180, 900, 0.35, 0.12, sfxEnv), 0)
+	s[sfxLaunch] = launch
+	blast := Sweep(Noise, 0, 0, 0.8, 0.4, ADSR{0.002, 0.6, 0.15, 0.2})
+	blast = Mix(blast, Sweep(Square, 220, 40, 0.5, 0.22, ADSR{0.002, 0.4, 0.2, 0.1}), 0)
+	for i, f := range []float64{1800, 2400, 1500, 2900, 2100} { // firework crackles
+		blast = Mix(blast, Sweep(Pulse25, f, f*0.7, 0.04, 0.16, sfxEnv), int(float64(SampleRate)*(0.12+0.09*float64(i))))
+	}
+	s[sfxBlast] = blast
 	return s
 }

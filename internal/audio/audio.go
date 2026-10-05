@@ -103,6 +103,10 @@ func (p *Player) Handle(events []world.Event) {
 			p.play(sfxClear)
 		case world.EvExtraLife:
 			p.play(sfxExtra)
+		case world.EvMissileFired:
+			p.play(sfxLaunch)
+		case world.EvMissileHit:
+			p.play(sfxBlast)
 		}
 	}
 }

@@ -14,13 +14,14 @@ inspired by Tehkan's 1984 arcade classic. Jack leaps and floats around four scre
   - the **lit-bomb chain** with a round-end bonus. Bombs come in rows and columns that light one by one (rows left to right, columns top to bottom), so you can sweep a whole group in one run or one drop. Before the first pickup, the bomb that starts the chain flashes white as a hint.
   - a bonus meter that releases the **P** power ball, which turns enemies into coins
   - **B** (multiplier), **E** (extra life) and **S** (special) power-ups
+- **Homing missiles:** you start each life with 3 and can hold up to 9; a missile crate drops in regularly. Each missile curves in on the closest enemy along a Bézier arc, wobbling and accelerating, with a huge cartoon smoke trail, and ends in a firework.
 - **All graphics are generated in Go code** ([internal/art](internal/art)), with no image files:
   - 16-bit-style pixel-art sprites
   - smooth-gradient backdrops with parallax layers and drifting clouds
   - particle effects: cartoon bomb explosions with flares and steam, the mummy-transform "poof", and a sparkling title logo
   - a bitmap font
 - **Procedural chiptune** sound effects and music ([internal/audio](internal/audio)).
-- **Top-5 high-score table** with 3-letter initials, saved locally.
+- **Top-5 high-score table** with 3-letter initials (left/right picks a letter, jump confirms, X goes back), saved locally.
 - **Runs in the browser** via a WebAssembly build.
 
 ## Controls
@@ -30,6 +31,7 @@ inspired by Tehkan's 1984 arcade classic. Jack leaps and floats around four scre
 | ← → (or A / D) | Move |
 | Z / Space / ↑ | Jump. Tap repeatedly in mid-air to **fly**: each tap gives a little lift, then gravity takes over |
 | ↓ | Cancel float (drop faster) |
+| X | Fire a **homing missile** at the closest enemy |
 | Enter | Start |
 | P / Esc | Pause. Esc again while paused quits to the title |
 | M | Mute |

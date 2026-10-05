@@ -3,6 +3,8 @@ package game
 import (
 	"path/filepath"
 	"testing"
+
+	"bombjack/internal/world"
 )
 
 func TestHiScoreTable(t *testing.T) {
@@ -30,5 +32,31 @@ func TestHiScoreTable(t *testing.T) {
 	}
 	if got := loadTable(); got[0].Name != "TOP" || len(got) != hiTableSize {
 		t.Fatalf("not persisted: %+v", got)
+	}
+}
+
+func TestNameEntryBack(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "hs.json")
+	hiScoreFile = func() string { return path }
+	defer func() { hiScoreFile = hiScorePath }()
+
+	g := &Game{Table: loadTable()}
+	n := &NameEntry{score: 99999, name: []byte("AAA"), t: 20}
+	n.Update(g, world.Controls{JumpPressed: true}) // confirm letter 1
+	n.Update(g, world.Controls{Fire: true})        // back to letter 1
+	if n.pos != 0 {
+		t.Fatalf("pos %d after X, want 0", n.pos)
+	}
+	n.Update(g, world.Controls{Fire: true}) // already at the first letter
+	if n.pos != 0 {
+		t.Fatalf("pos %d, X must not go before the first letter", n.pos)
+	}
+	n.Update(g, world.Controls{Right: true}) // A -> B
+	n.Update(g, world.Controls{})
+	for i := 0; i < 3; i++ {
+		n.Update(g, world.Controls{JumpPressed: true})
+	}
+	if g.Table[0].Name != "BAA" {
+		t.Fatalf("saved %q, want BAA", g.Table[0].Name)
 	}
 }

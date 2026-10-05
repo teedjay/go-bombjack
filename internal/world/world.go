@@ -39,6 +39,7 @@ type Controls struct {
 	Jump              bool // held
 	JumpPressed       bool // went down this tick
 	Start             bool // pressed this tick
+	Fire              bool // missile button pressed this tick
 }
 
 // Platform is a horizontal run of Len tiles at tile coords (TX,TY).
@@ -64,6 +65,7 @@ const (
 	PickupB                   // bonus multiplier +1
 	PickupE                   // extra life
 	PickupS                   // special
+	PickupM                   // +1 homing missile
 )
 
 type Pickup struct {

@@ -231,3 +231,61 @@ func TestRunThroughGroup(t *testing.T) {
 		t.Fatal("chain should wrap to the next group")
 	}
 }
+
+func TestMissileStock(t *testing.T) {
+	w, order := newWorld()
+	s := NewForLevel(order, 0)
+	if s.Missiles != StartMissiles {
+		t.Fatalf("start with %d missiles", s.Missiles)
+	}
+	// crates spawn regularly, one at a time
+	for i := 0; i < MissileEvery*3; i++ {
+		w.Events = w.Events[:0]
+		s.Apply(w)
+	}
+	crates := 0
+	for _, p := range w.Pickups {
+		if p.Kind == world.PickupM {
+			crates++
+		}
+	}
+	if crates != 1 {
+		t.Fatalf("%d crates on field, want 1", crates)
+	}
+	// picking up caps at MaxMissiles, then pays points
+	for i := 0; i < MaxMissiles-StartMissiles+2; i++ { // 2 over the cap
+		w.Events = []world.Event{{Kind: world.EvPickupTaken, Pickup: world.PickupM}}
+		s.Apply(w)
+	}
+	if s.Missiles != MaxMissiles || s.Score != 2*MissileFullPts {
+		t.Fatalf("missiles %d score %d", s.Missiles, s.Score)
+	}
+	for i := 0; i < MaxMissiles; i++ {
+		if !s.UseMissile() {
+			t.Fatal("ran out early")
+		}
+	}
+	if s.UseMissile() {
+		t.Fatal("fired with an empty stock")
+	}
+	// a kill scores; an explosion with no kill does not
+	before := s.Score
+	w.Events = []world.Event{{Kind: world.EvMissileHit, Index: 1}, {Kind: world.EvMissileHit, Index: 0}}
+	s.Apply(w)
+	if s.Score-before != MissileKillPts {
+		t.Fatalf("kill scored %d", s.Score-before)
+	}
+}
+
+func TestMissilesResetOnDeath(t *testing.T) {
+	w, order := newWorld()
+	s := NewForLevel(order, 0)
+	for _, n := range []int{7, 0} { // more than the start stock, and empty
+		s.Missiles = n
+		w.Events = []world.Event{{Kind: world.EvPlayerDied}}
+		s.Apply(w)
+		if s.Missiles != StartMissiles {
+			t.Fatalf("after death with %d: %d missiles, want %d", n, s.Missiles, StartMissiles)
+		}
+	}
+}

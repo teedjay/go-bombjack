@@ -164,6 +164,7 @@ func Logo() *image.RGBA {
 func Icons() map[string]*image.RGBA {
 	e := func(rows ...string) *image.RGBA { return FromASCII(8, 8, rows...) }
 	return map[string]*image.RGBA{
+		"missile": missileIcon(),
 		"life": e(
 			".KKKKK..",
 			"KbbbbbK.",

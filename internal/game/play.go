@@ -4,13 +4,16 @@ import (
 	"fmt"
 	"image/color"
 	"math"
+	"math/rand/v2"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"github.com/hajimehoshi/ebiten/v2/vector"
 
 	"bombjack/internal/enemy"
 	"bombjack/internal/gfx"
 	"bombjack/internal/level"
+	"bombjack/internal/missile"
 	"bombjack/internal/player"
 	"bombjack/internal/rules"
 	"bombjack/internal/world"
@@ -31,6 +34,7 @@ var (
 	colBandShade = color.RGBA{0xa8, 0x98, 0x68, 0xff}
 	colSteam     = color.RGBA{0xd8, 0xdc, 0xe8, 0xff}
 	colSmokeDark = color.RGBA{0x48, 0x4c, 0x60, 0xff}
+	colTrailInk  = color.RGBA{0x40, 0x42, 0x58, 0xff} // cartoon outline on smoke
 )
 
 type phase int
@@ -65,7 +69,10 @@ type Play struct {
 	parallax     float64 // smoothed -1..1 from Jack's x position
 	shake        int     // ticks of screen shake left
 	shakeAmp     float64
-	canvas       *ebiten.Image // offscreen frame, drawn shaken to the screen
+	flash        int // ticks of white screen flash left
+	missiles     *missile.Manager
+	lastTail     map[*missile.Missile]world.Vec // trail interpolation
+	canvas       *ebiten.Image                  // offscreen frame, drawn shaken to the screen
 }
 
 // NewSession starts a new game at round 0.
@@ -85,10 +92,12 @@ func newRound(g *Game, r *rules.State) *Play {
 	w := level.Build(r.Round, uint64(r.Round)*7919+1)
 	j := player.New(d.PlayerStart)
 	w.Player = j
+	ms := &missile.Manager{}
 	w.Systems = append(w.Systems,
 		enemy.NewSpawner(rules.Scale(d.Enemies, r.Loop())),
-		rules.PickupMover{})
-	p := &Play{World: w, Rules: r, Jack: j, Def: d}
+		rules.PickupMover{},
+		ms)
+	p := &Play{World: w, Rules: r, Jack: j, Def: d, missiles: ms}
 	if g != nil {
 		r.HiScore = g.HiScore
 		p.fx = gfx.NewFX(g.Sheet)
@@ -139,6 +148,12 @@ func (p *Play) Update(g *Game, c world.Controls) Scene {
 	w := p.World
 	if p.Jack.Alive() {
 		w.Step(c)
+		if c.Fire && p.Rules.Missiles > 0 {
+			jp := p.Jack.Pos()
+			if p.missiles.Fire(w, world.Vec{X: jp.X + 8, Y: jp.Y + 6}, p.Jack.FacingLeft()) {
+				p.Rules.UseMissile()
+			}
+		}
 	} else {
 		// everything freezes while Jack's death plays out
 		w.Events = w.Events[:0]
@@ -153,6 +168,8 @@ func (p *Play) Update(g *Game, c world.Controls) Scene {
 		}
 	}
 	p.handleEvents()
+	p.missileTrails()
+	p.flash = max(p.flash-1, 0)
 
 	if p.Jack.FacingLeft() != p.lastLeft {
 		p.turnT, p.lastLeft = turnTicks, p.Jack.FacingLeft()
@@ -217,8 +234,82 @@ func (p *Play) handleEvents() {
 				Fade: colRedDark, Speed: 2.6, Gravity: 0.06, Drag: 0.95, Life: 45, Big: 0.3})
 		case world.EvScore:
 			p.fx.Popup(e.Value, e.Pos.X, e.Pos.Y)
+		case world.EvMissileFired:
+			p.fx.Burst(e.Pos.X, e.Pos.Y, gfx.BurstSpec{N: 10, Colors: []color.RGBA{colWhite, colSteam},
+				Fade: colSmoke, Speed: 1.4, Gravity: -0.02, Drag: 0.9, Life: 40,
+				Size: 4, Grow: 0.12, Round: true, Outline: colTrailInk})
+		case world.EvMissileHit:
+			p.firework(e.Pos.X, e.Pos.Y)
 		}
 	}
+}
+
+// missileTrails lays a fat cartoon smoke trail behind every missile:
+// outlined puffs (which merge into one cloud) spaced every few pixels along
+// the path the tail travelled this tick, so a fast missile leaves no gaps,
+// plus flame sparks at the nozzle.
+func (p *Play) missileTrails() {
+	if p.fx == nil {
+		return
+	}
+	if p.lastTail == nil {
+		p.lastTail = map[*missile.Missile]world.Vec{}
+	}
+	live := map[*missile.Missile]bool{}
+	for _, ms := range p.missiles.Missiles {
+		live[ms] = true
+		t := ms.Tail()
+		from, ok := p.lastTail[ms]
+		if !ok {
+			from = t
+		}
+		p.lastTail[ms] = t
+		d := math.Hypot(t.X-from.X, t.Y-from.Y)
+		n := max(1, int(d/3))
+		for i := 1; i <= n; i++ {
+			f := float64(i) / float64(n)
+			x, y := from.X+(t.X-from.X)*f, from.Y+(t.Y-from.Y)*f
+			p.fx.Burst(x, y, gfx.BurstSpec{N: 1, Colors: []color.RGBA{colWhite, colSteam},
+				Fade: colSmoke, Speed: 0.3, Gravity: -0.012, Drag: 0.93, Life: 55,
+				Size: 5, Grow: 0.2, Round: true, Outline: colTrailInk, Wobble: 1.5})
+		}
+		p.fx.Burst(t.X, t.Y, gfx.BurstSpec{N: 2, Colors: []color.RGBA{colYellow, colOrange, colWhite},
+			Fade: colRedDark, Speed: 0.8, Drag: 0.9, Life: 12, Size: 2})
+	}
+	for ms := range p.lastTail {
+		if !live[ms] {
+			delete(p.lastTail, ms)
+		}
+	}
+}
+
+// firework is the missile impact: a double-size boom ringed by smaller
+// ones, a rainbow ring and a spray of trailing sparks that crackle into
+// more sparks, embers bouncing on the floor, billowing outlined smoke, a
+// white flash and a big screen shake.
+func (p *Play) firework(cx, cy float64) {
+	if p.fx == nil {
+		return
+	}
+	floor := float64(world.FieldH - 1)
+	rainbow := []color.RGBA{colRed, colYellow, colCyan, colPink, colGreen, colWhite, colPurple}
+	p.fx.SpawnCentered("boom", cx, cy, 2)
+	for i := 0; i < 3; i++ {
+		a := rand.Float64() * 2 * math.Pi
+		p.fx.SpawnCentered("boom", cx+math.Cos(a)*18, cy+math.Sin(a)*18, 1)
+	}
+	p.fx.Burst(cx, cy, gfx.BurstSpec{N: 36, Colors: rainbow, Fade: colOrange, Speed: 4.2,
+		Gravity: 0.05, Drag: 0.95, Life: 42, Size: 2, Trail: 2.5, Ring: true, Pop: 4})
+	p.fx.Burst(cx, cy, gfx.BurstSpec{N: 44, Colors: rainbow, Fade: colRedDark, Speed: 6,
+		Gravity: 0.09, Drag: 0.96, Life: 55, Trail: 2, Big: 0.3, Pop: 3})
+	p.fx.Burst(cx, cy, gfx.BurstSpec{N: 18, Colors: []color.RGBA{colOrange, colYellow},
+		Fade: colRedDark, Speed: 3, Gravity: 0.14, Drag: 0.98, Life: 70, Size: 2, UpBias: 2, Floor: floor})
+	p.fx.Burst(cx, cy, gfx.BurstSpec{N: 16, Colors: []color.RGBA{colSteam, colWhite, colSmoke},
+		Fade: colSmokeDark, Speed: 1.6, Gravity: -0.04, Drag: 0.94, Life: 90,
+		Size: 5, Grow: 0.14, Round: true, Outline: colTrailInk, Wobble: 3})
+	p.shake = max(p.shake, 16)
+	p.shakeAmp = 3
+	p.flash = 6
 }
 
 // bombBoom is the exaggerated cartoon explosion for collecting a bomb: a
@@ -301,7 +392,7 @@ func (p *Play) drawFrame(g *Game, screen *ebiten.Image) {
 		}
 		s.Draw(screen, name, w.Tick, b.Pos.X, b.Pos.Y+HUDH, false)
 	}
-	pickupAnim := [...]string{"power_p", "power_b", "power_e", "power_s"}
+	pickupAnim := [...]string{"power_p", "power_b", "power_e", "power_s", "power_m"}
 	for _, pk := range w.Pickups {
 		s.Draw(screen, pickupAnim[pk.Kind], w.Tick, pk.Pos.X, pk.Pos.Y+HUDH, false)
 	}
@@ -321,6 +412,13 @@ func (p *Play) drawFrame(g *Game, screen *ebiten.Image) {
 	p.drawJack(g, screen)
 	if p.fx != nil {
 		p.fx.Draw(screen, HUDH)
+	}
+	for _, ms := range p.missiles.Missiles {
+		s.DrawRotated(screen, "missile", w.Tick, ms.Pos.X, ms.Pos.Y+HUDH, ms.Angle)
+	}
+	if p.flash > 0 {
+		a := float32(p.flash) / 6 * 0.45
+		vector.FillRect(screen, 0, HUDH, ScreenW, world.FieldH, color.RGBA{uint8(255 * a), uint8(255 * a), uint8(255 * a), uint8(255 * a)}, false)
 	}
 	p.drawHUD(g, screen)
 
@@ -373,6 +471,11 @@ func (p *Play) drawJack(g *Game, screen *ebiten.Image) {
 func (p *Play) drawHUD(g *Game, screen *ebiten.Image) {
 	s, r := g.Sheet, p.Rules
 	s.Text(screen, fmt.Sprintf("SCORE %07d", r.Score), 2, 0, colWhite)
+	// missile stock
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(114, 0)
+	screen.DrawImage(s.MissileIcon(), op)
+	s.Text(screen, fmt.Sprintf("x%d", r.Missiles), 124, 0, colWhite)
 	hi := fmt.Sprintf("HI %07d", max(r.HiScore, g.HiScore))
 	s.Text(screen, hi, float64(ScreenW-2-s.TextWidth(hi)), 0, colYellow)
 	// bonus meter: 10 cells

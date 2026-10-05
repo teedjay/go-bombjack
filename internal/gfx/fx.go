@@ -34,8 +34,9 @@ const popupLife = 45
 
 type fxItem struct {
 	Animator
-	x, y float64
-	tint *ebiten.ColorScale // nil = untinted
+	x, y  float64
+	tint  *ebiten.ColorScale // nil = untinted
+	scale float64            // 0 = 1x
 }
 
 type popup struct {
@@ -58,6 +59,13 @@ func NewFX(s *Sheet) *FX { return &FX{sheet: s} }
 // Spawn starts a one-shot animation with its top-left at (x,y).
 func (f *FX) Spawn(name string, x, y float64) {
 	f.items = append(f.items, fxItem{Animator: Animator{Name: name}, x: x, y: y})
+}
+
+// SpawnCentered starts a one-shot animation centred on (cx,cy), scaled.
+func (f *FX) SpawnCentered(name string, cx, cy, scale float64) {
+	w, h := f.sheet.Frame(name, 0).Bounds().Dx(), f.sheet.Frame(name, 0).Bounds().Dy()
+	f.items = append(f.items, fxItem{Animator: Animator{Name: name},
+		x: cx - float64(w)*scale/2, y: cy - float64(h)*scale/2, scale: scale})
 }
 
 // SpawnTinted starts a one-shot animation multiplied by colour c.
@@ -98,7 +106,12 @@ func (f *FX) Update() {
 // Draw renders all effects; offsetY shifts them down (e.g. below the HUD).
 func (f *FX) Draw(dst *ebiten.Image, offsetY float64) {
 	for _, it := range f.items {
-		if it.tint != nil {
+		if it.scale != 0 && it.scale != 1 {
+			op := &ebiten.DrawImageOptions{}
+			op.GeoM.Scale(it.scale, it.scale)
+			op.GeoM.Translate(it.x, it.y+offsetY)
+			dst.DrawImage(f.sheet.Frame(it.Name, it.T), op)
+		} else if it.tint != nil {
 			f.sheet.drawScaled(dst, it.Name, it.T, it.x, it.y+offsetY, false, *it.tint)
 		} else {
 			it.Draw(f.sheet, dst, it.x, it.y+offsetY, false)

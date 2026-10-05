@@ -153,3 +153,18 @@ func (s *Sheet) DrawPlatform(dst *ebiten.Image, level int, x, y float64, n int) 
 
 // LogoEdge returns logo outline pixels (logo-local coords) for sparkles.
 func (s *Sheet) LogoEdge() []image.Point { return s.logoEdge }
+
+// DrawRotated draws a frame centred on (cx,cy), rotated by angle radians
+// (0 = as drawn, clockwise positive since y points down).
+func (s *Sheet) DrawRotated(dst *ebiten.Image, name string, tick int, cx, cy, angle float64) {
+	img := s.Frame(name, tick)
+	b := img.Bounds()
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(-float64(b.Dx())/2, -float64(b.Dy())/2)
+	op.GeoM.Rotate(angle)
+	op.GeoM.Translate(math.Round(cx), math.Round(cy))
+	dst.DrawImage(img, op)
+}
+
+// MissileIcon is the 8x8 HUD missile.
+func (s *Sheet) MissileIcon() *ebiten.Image { return s.icons["missile"] }

@@ -244,3 +244,9 @@ and must not edit packages it does not own. To ask for a contract change, leave 
   - Levels are defined as bomb groups (rows/columns). LitOrder visits groups in zig-zag order, and bombs within a group in layout order.
   - Taking a bomb lights the *next* bomb after it in LitOrder, so a whole group can be swept in one run or drop.
   - While nothing is lit, the chain-start bomb flashes white after 3 s (`rules.HintBomb`, art `bomb_flash`).
+- **2026-10-05 — Homing missiles.**
+  - New headless `internal/missile` (a world.System). Each missile follows a cubic Bézier curve whose end tracks the target, advances by arc length while accelerating (`LaunchSpeed` → `MaxSpeed`), and adds a fading sideways wobble. The drawn angle eases toward the motion. It re-targets if its target dies, and salvoes spread across enemies.
+  - Rules: 3 missiles at start, max 9, a crate (`PickupM`) every 10 s with one on the field at a time, 500 × multiplier per kill. A crate picked up at 9 missiles gives 1000 pts.
+  - FX: an outlined, interpolated smoke trail, and an impact firework (2× boom plus small booms, a rainbow spark ring and spray that crackle, embers, smoke, a white flash and a big shake).
+  - Sound: launch whoosh, blast with crackles. X key / gamepad X fires.
+- **2026-10-05 — Tweaks.** Losing a life resets the missile stock to 3. In initials entry, X goes back to the previous letter.
