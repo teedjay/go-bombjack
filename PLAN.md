@@ -240,3 +240,7 @@ and must not edit packages it does not own. To ask for a contract change, leave 
   - **Flying:** each mid-air jump tap gives a small lift (`FloatLift`) and a short slow-fall (`FloatHold`). After that, gravity ramps back over `FloatDecay`, so staying up needs repeated tapping.
   - **Bomb pickups:** a cartoon "boom" (32px), trailing flares, bouncing embers, swelling steam puffs, and a screen shake. Lit bombs get a bigger version.
   - **Title screen:** the high-score table fits inside its panel.
+- **2026-10-05 — Grouped lit chain.**
+  - Levels are defined as bomb groups (rows/columns). LitOrder visits groups in zig-zag order, and bombs within a group in layout order.
+  - Taking a bomb lights the *next* bomb after it in LitOrder, so a whole group can be swept in one run or drop.
+  - While nothing is lit, the chain-start bomb flashes white after 3 s (`rules.HintBomb`, art `bomb_flash`).

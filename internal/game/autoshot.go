@@ -20,7 +20,7 @@ import (
 type Autoshot struct {
 	dir   string
 	ticks []int
-	idle  bool // round < 0: stay on the title screen, no input
+	idle  bool // no input (always for round < 0, which stays on the title)
 }
 
 func autoshotFromEnv(g *Game) *Autoshot {
@@ -32,8 +32,10 @@ func autoshotFromEnv(g *Game) *Autoshot {
 	if len(parts) != 3 {
 		return nil
 	}
-	round, _ := strconv.Atoi(parts[1])
-	a := &Autoshot{dir: parts[0]}
+	// "3i" = round 3 with no input (idle), e.g. to see the hint flash
+	idle := strings.HasSuffix(parts[1], "i")
+	round, _ := strconv.Atoi(strings.TrimSuffix(parts[1], "i"))
+	a := &Autoshot{dir: parts[0], idle: idle}
 	for _, s := range strings.Split(parts[2], ",") {
 		if n, err := strconv.Atoi(s); err == nil {
 			a.ticks = append(a.ticks, n)

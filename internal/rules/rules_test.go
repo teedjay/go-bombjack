@@ -49,8 +49,15 @@ func TestFullLitChain(t *testing.T) {
 			lit = i
 		}
 	}
-	if lit != order[0] {
-		t.Fatalf("lit %d want %d", lit, order[0])
+	// the bomb lit is the one after bomb 5 in the order
+	pos := 0
+	for i, idx := range order {
+		if idx == 5 {
+			pos = i
+		}
+	}
+	if want := order[(pos+1)%len(order)]; lit != want {
+		t.Fatalf("lit %d want %d", lit, want)
 	}
 	count := 0
 	for lit >= 0 && count < 30 {
@@ -63,11 +70,8 @@ func TestFullLitChain(t *testing.T) {
 			}
 		}
 	}
-	if s.LitCount != 22 { // 23 remaining after first, but 5 was skipped in chain => 23 lit
-		// chain covers all 23 other bombs
-		if s.LitCount != 23 {
-			t.Fatalf("litcount %d", s.LitCount)
-		}
+	if s.LitCount != 23 { // the chain covers all 23 bombs after the first
+		t.Fatalf("litcount %d", s.LitCount)
 	}
 	if w.BombsLeft() != 0 {
 		t.Fatalf("left %d", w.BombsLeft())
@@ -184,5 +188,46 @@ func TestPickupMoverBounds(t *testing.T) {
 		if p.Pos.X < -0.01 || p.Pos.X > 240.01 || p.Pos.Y < -0.01 || p.Pos.Y > world.FloorY+0.01 {
 			t.Fatalf("out of bounds %v", p.Pos)
 		}
+	}
+}
+
+func TestHintBomb(t *testing.T) {
+	w := world.New(1)
+	for i := 0; i < 4; i++ {
+		w.Bombs = append(w.Bombs, &world.Bomb{Pos: world.Vec{X: float64(i * 20)}})
+	}
+	s := NewForLevel([]int{2, 3, 0, 1}, 0)
+	if got := s.HintBomb(w); got != 2 {
+		t.Fatalf("hint = %d, want 2 (first in LitOrder)", got)
+	}
+	w.Bombs[2].Taken = true // taken out of the world by other means
+	if got := s.HintBomb(w); got != 3 {
+		t.Fatalf("hint = %d, want 3 (first not taken)", got)
+	}
+	w.Bombs[0].Taken = true
+	w.Events = []world.Event{{Kind: world.EvBombTaken, Index: 0}}
+	s.Apply(w)
+	if got := s.HintBomb(w); got != -1 {
+		t.Fatalf("hint = %d after the chain started, want -1", got)
+	}
+}
+
+// Taking the first bomb of a group lights its neighbour, so running through
+// the group takes every bomb lit.
+func TestRunThroughGroup(t *testing.T) {
+	w := world.New(1)
+	for i := 0; i < 6; i++ {
+		w.Bombs = append(w.Bombs, &world.Bomb{Pos: world.Vec{X: float64(i * 16)}})
+	}
+	s := NewForLevel([]int{3, 4, 5, 0, 1, 2}, 0) // two groups of three
+	take(s, w, 0)                                // enter group 2 at its start
+	for _, i := range []int{1, 2} {
+		if !w.Bombs[i].Lit {
+			t.Fatalf("bomb %d should be lit when reached", i)
+		}
+		take(s, w, i)
+	}
+	if !w.Bombs[3].Lit {
+		t.Fatal("chain should wrap to the next group")
 	}
 }

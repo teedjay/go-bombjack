@@ -11,7 +11,7 @@ inspired by Tehkan's 1984 arcade classic. Jack leaps and floats around four scre
 - **4 levels:** Egypt, Greece, Castle and City. After City they loop with higher difficulty.
 - **Classic mechanics:**
   - high jumps, and mid-air **float**
-  - the **lit-bomb chain** with a round-end bonus
+  - the **lit-bomb chain** with a round-end bonus. Bombs come in rows and columns that light one by one (rows left to right, columns top to bottom), so you can sweep a whole group in one run or one drop. Before the first pickup, the bomb that starts the chain flashes white as a hint.
   - a bonus meter that releases the **P** power ball, which turns enemies into coins
   - **B** (multiplier), **E** (extra life) and **S** (special) power-ups
 - **All graphics are generated in Go code** ([internal/art](internal/art)), with no image files:
@@ -85,7 +85,7 @@ The `web/` folder is static, so it can be hosted anywhere.
 | `make test` | Run all unit tests. Game logic is headless and runs without a window |
 | `make lint` | gofmt check + `go vet` |
 | `make sprites` | Render all sprites/backgrounds to `assets/` plus an animated preview at `assets/preview/index.html` |
-| `make shots ROUND=2 TICKS=300,900` | Autopilot run that saves screenshots to `shots/` (`ROUND=-1` = title screen) |
+| `make shots ROUND=2 TICKS=300,900` | Autopilot run that saves screenshots to `shots/` (`ROUND=-1` = title screen, `ROUND=0i` = round 0 with no input) |
 | `make web` / `make serve` | Build or serve the WebAssembly version |
 
 The design, architecture and the multi-agent implementation plan are in [PLAN.md](PLAN.md).

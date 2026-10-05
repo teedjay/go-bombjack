@@ -40,3 +40,30 @@ func TestLevels(t *testing.T) {
 		}
 	}
 }
+
+// Groups light one by one in layout order: rows left to right, columns top
+// to bottom, and a group is never interleaved with another.
+func TestGroupOrder(t *testing.T) {
+	gs := groups(
+		row(150, 100, 3, 16), // right, lower
+		col(4, 20, 3, 20),    // left column, top
+		row(40, 60, 2, 16),   // left, middle
+	)
+	bombs, order := groupOrder(gs)
+	if len(bombs) != 8 || len(order) != 8 {
+		t.Fatalf("got %d bombs, %d order", len(bombs), len(order))
+	}
+	// zig-zag by first bomb alternates sides: left col (y20), right row
+	// (y100), then left row (y60)
+	want := []int{3, 4, 5, 0, 1, 2, 6, 7}
+	for i := range want {
+		if order[i] != want[i] {
+			t.Fatalf("order = %v, want %v", order, want)
+		}
+	}
+	for i := 1; i < 3; i++ { // column lights top to bottom
+		if bombs[order[i]].Y <= bombs[order[i-1]].Y {
+			t.Fatalf("column not top to bottom: %v", order)
+		}
+	}
+}

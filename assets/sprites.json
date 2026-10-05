@@ -117,6 +117,15 @@
     "loop": true
   },
   {
+    "name": "bomb_flash",
+    "file": "sprites/bomb_flash.png",
+    "w": 16,
+    "h": 16,
+    "frames": 2,
+    "fps": 5,
+    "loop": true
+  },
+  {
     "name": "bomb_lit",
     "file": "sprites/bomb_lit.png",
     "w": 16,

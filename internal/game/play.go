@@ -46,6 +46,7 @@ const (
 	clearTicks = 200
 	landTicks  = 6
 	turnTicks  = 5
+	hintDelay  = 180 // ticks before the chain-start bomb starts flashing
 )
 
 // Play runs the game session: one Play per round, rules carried across.
@@ -283,13 +284,20 @@ func (p *Play) drawFrame(g *Game, screen *ebiten.Image) {
 	for _, pl := range w.Platforms {
 		s.DrawPlatform(screen, w.Level, float64(pl.TX*world.Tile), float64(pl.TY*world.Tile+HUDH), pl.Len)
 	}
-	for _, b := range w.Bombs {
+	hint := -1
+	if w.Tick > hintDelay {
+		hint = p.Rules.HintBomb(w)
+	}
+	for i, b := range w.Bombs {
 		if b.Taken {
 			continue
 		}
 		name := "bomb"
-		if b.Lit {
+		switch {
+		case b.Lit:
 			name = "bomb_lit"
+		case i == hint:
+			name = "bomb_flash"
 		}
 		s.Draw(screen, name, w.Tick, b.Pos.X, b.Pos.Y+HUDH, false)
 	}

@@ -108,9 +108,37 @@ func (s *State) gainMeter(w *world.World, n int) {
 	}
 }
 
-// lightNext lights the first not-taken bomb in LitOrder.
-func (s *State) lightNext(w *world.World) {
+// HintBomb returns the bomb index that starts the lit chain while no bomb
+// has been lit yet this round (taking it first lights its whole group in
+// sequence), or -1 once the chain has started.
+func (s *State) HintBomb(w *world.World) int {
+	if s.started {
+		return -1
+	}
+	for _, idx := range s.LitOrder {
+		if idx >= 0 && idx < len(w.Bombs) && !w.Bombs[idx].Taken {
+			return idx
+		}
+	}
+	return -1
+}
+
+// lightNext lights the next not-taken bomb after bomb `from` in LitOrder,
+// wrapping around. Because groups are consecutive in LitOrder, taking any
+// bomb of a row or column lights its neighbour, so a group can be cleared
+// in one run.
+func (s *State) lightNext(w *world.World, from int) {
+	n := len(s.LitOrder)
+	start := 0
 	for i, idx := range s.LitOrder {
+		if idx == from {
+			start = i + 1
+			break
+		}
+	}
+	for k := 0; k < n; k++ {
+		i := (start + k) % n
+		idx := s.LitOrder[i]
 		if idx >= 0 && idx < len(w.Bombs) && !w.Bombs[idx].Taken {
 			w.Bombs[idx].Lit = true
 			s.LitChain = i
@@ -143,7 +171,7 @@ func (s *State) Apply(w *world.World) {
 			}
 			if !s.started || e.Lit {
 				s.started = true
-				s.lightNext(w)
+				s.lightNext(w, e.Index)
 			}
 		case world.EvPickupTaken:
 			switch e.Pickup {

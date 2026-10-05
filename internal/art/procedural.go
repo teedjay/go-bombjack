@@ -82,8 +82,14 @@ func bomb(lit bool, frame int) *image.RGBA {
 }
 
 func bombAnims() []Anim {
+	plain := bomb(false, 0)
+	white := recolor([]*image.RGBA{plain}, map[color.RGBA]color.RGBA{
+		DarkRed: LightGrey, Red: White, Pink: White, Grey: White, LightGrey: White, Brown: LightGrey,
+	})[0]
 	return []Anim{
-		{Name: "bomb", Frames: []*image.RGBA{bomb(false, 0)}, FPS: 1, Loop: true},
+		{Name: "bomb", Frames: []*image.RGBA{plain}, FPS: 1, Loop: true},
+		// hint flash for the bomb that starts the lit chain
+		{Name: "bomb_flash", Frames: []*image.RGBA{plain, white}, FPS: 5, Loop: true},
 		{Name: "bomb_lit", Frames: []*image.RGBA{bomb(true, 0), bomb(true, 1), bomb(true, 2)}, FPS: 12, Loop: true},
 	}
 }
