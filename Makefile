@@ -1,4 +1,4 @@
-.PHONY: run build test lint sprites shots
+.PHONY: run build test lint sprites shots web serve
 
 run:
 	go run ./cmd/bombjack
@@ -21,3 +21,11 @@ ROUND ?= 0
 TICKS ?= 200,600,1000
 shots: build
 	BOMBJACK_SHOTS="shots/r$(ROUND):$(ROUND):$(TICKS)" ./bin/bombjack
+
+# Browser build: make web && make serve, then open http://localhost:8080
+web:
+	GOOS=js GOARCH=wasm go build -o web/bombjack.wasm ./cmd/bombjack
+	cp "$$(go env GOROOT)/lib/wasm/wasm_exec.js" web/
+
+serve: web
+	python3 -m http.server 8080 -d web

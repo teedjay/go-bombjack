@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bomb Jack Go</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #140f1e; color: #f8d830;
+    font: 14px ui-monospace, Menlo, monospace; }
+  #loading { position: fixed; inset: 0; display: grid; place-items: center; letter-spacing: 2px; }
+</style>
+</head>
+<body>
+<div id="loading">LOADING BOMB JACK…</div>
+<script src="wasm_exec.js"></script>
+<script>
+  const go = new Go();
+  WebAssembly.instantiateStreaming(fetch("bombjack.wasm"), go.importObject)
+    .then(r => { document.getElementById("loading").remove(); go.run(r.instance); })
+    .catch(e => { document.getElementById("loading").textContent = "FAILED TO LOAD: " + e; });
+</script>
+</body>
+</html>

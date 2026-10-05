@@ -19,7 +19,8 @@ inspired by Tehkan's 1984 arcade classic. Jack leaps and floats around four scre
   - smooth-gradient backdrops
   - a bitmap font
 - **Procedural chiptune** sound effects and music ([internal/audio](internal/audio)).
-- High score saved locally.
+- **Top-5 high-score table** with 3-letter initials, saved locally.
+- **Runs in the browser** via a WebAssembly build.
 
 ## Controls
 
@@ -66,6 +67,15 @@ Then start it:
 
 Without `make`, use `go run ./cmd/bombjack`.
 
+### Play in the browser (WebAssembly)
+
+```bash
+make serve
+```
+
+This builds `web/bombjack.wasm` and serves it locally. Then open <http://localhost:8080>.
+The `web/` folder is static, so it can be hosted anywhere.
+
 ## Development
 
 | Command | Purpose |
@@ -73,6 +83,7 @@ Without `make`, use `go run ./cmd/bombjack`.
 | `make test` | Run all unit tests. Game logic is headless and runs without a window |
 | `make lint` | gofmt check + `go vet` |
 | `make sprites` | Render all sprites/backgrounds to `assets/` plus an animated preview at `assets/preview/index.html` |
-| `make shots ROUND=2 TICKS=300,900` | Autopilot run that saves screenshots to `shots/` |
+| `make shots ROUND=2 TICKS=300,900` | Autopilot run that saves screenshots to `shots/` (`ROUND=-1` = title screen) |
+| `make web` / `make serve` | Build or serve the WebAssembly version |
 
 The design, architecture and the multi-agent implementation plan are in [PLAN.md](PLAN.md).

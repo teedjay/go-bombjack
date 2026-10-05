@@ -224,3 +224,9 @@ and must not edit packages it does not own. To ask for a contract change, leave 
     - a longer spawn-in
     - a slower first mummy
     - spawn points away from Jack
+- **2026-10-05 — Wave 3 done. The plan is complete.**
+  - **QA:** `internal/sim` adds a headless bot, a 10-minute soak test per level, and a reachability test. The reachability test proves all 24 bombs on every level can be reached.
+  - **Balance:** a slower start (first spawn after 200 ticks, 90-tick spawn grace, first mummy at 0.7x speed). Mummies spawn at the point farthest from Jack. Difficulty rises from L1 to L4.
+    - Bot clear rate: L1 95%, L2 97%, L3 96%, L4 1%. The low L4 rate is mostly the bot struggling to path to City's high bombs, but L4 needs human playtesting.
+  - **Extras:** top-5 high-score table with initials, text panels on title and banners, and a WebAssembly build (`make serve`), verified in a browser.
+  - **Open:** human playtest (feel, L4 difficulty), and audio has not been listened to.

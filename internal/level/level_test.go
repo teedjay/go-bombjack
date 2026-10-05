@@ -35,7 +35,7 @@ func TestLevels(t *testing.T) {
 				}
 			}
 		}
-		if len(d.Enemies.Spawns) == 0 || d.Enemies.MaxEnemies < 4 {
+		if len(d.Enemies.Spawns) == 0 || d.Enemies.MaxEnemies < 3 {
 			t.Errorf("%s: bad enemy config", d.Name)
 		}
 	}

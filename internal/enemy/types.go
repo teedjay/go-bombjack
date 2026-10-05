@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	spawnInTicks = 40
+	spawnInTicks = 90
 	morphTicks   = 20
 	maxX         = world.FieldW - 16
 	maxY         = world.FieldH - 16

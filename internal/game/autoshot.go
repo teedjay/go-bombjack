@@ -20,6 +20,7 @@ import (
 type Autoshot struct {
 	dir   string
 	ticks []int
+	idle  bool // round < 0: stay on the title screen, no input
 }
 
 func autoshotFromEnv(g *Game) *Autoshot {
@@ -39,17 +40,24 @@ func autoshotFromEnv(g *Game) *Autoshot {
 		}
 	}
 	_ = os.MkdirAll(a.dir, 0o755)
+	g.Audio.ToggleMute()
+	if round < 0 {
+		a.idle = true
+		return a
+	}
 	d := NewSession(g)
 	for range round {
 		d.Rules.NextRound(nil)
 	}
 	g.scene = newRound(g, d.Rules)
-	g.Audio.ToggleMute()
 	return a
 }
 
 // controls is a simple scripted pilot: wander, jump, float.
 func (a *Autoshot) controls(tick int) world.Controls {
+	if a.idle {
+		return world.Controls{}
+	}
 	phase := tick % 240
 	return world.Controls{
 		Left:        phase < 100,

@@ -216,6 +216,12 @@ func (p *Play) Draw(g *Game, screen *ebiten.Image) {
 	p.drawHUD(g, screen)
 
 	switch {
+	case p.paused, p.phase == phaseIntro:
+		panel(screen, 48, 90, ScreenW-96, 34)
+	case p.phase == phaseClear:
+		panel(screen, 40, 84, ScreenW-80, 48)
+	}
+	switch {
 	case p.paused:
 		g.centerText(screen, "PAUSED", 110, colYellow)
 	case p.phase == phaseIntro:
