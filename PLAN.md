@@ -1,6 +1,6 @@
 # Bomb Jack (Go + Ebitengine) — Implementation Plan
 
-A Bomb Jack–style arcade platformer with 16-bit-style bitmap graphics, 4 levels,
+A Bomb Jack–style arcade platformer with 16-bit-style bitmap graphics, 6 levels,
 animated sprites, written in Go with Ebitengine v2. This plan is written so that
 several coding agents (e.g. Sonnet 5.5) can work in parallel with minimal
 merge conflicts. Each workstream owns specific packages.
@@ -21,7 +21,7 @@ merge conflicts. Each workstream owns specific packages.
 | E | Extra life | Same |
 | S | Free credit (rare) | Big bonus of 100k plus an extra life |
 | Enemies | **Mummies/birds** spawn at the top and walk/fall. When they reach the floor they **transform** into homing birds, bouncing **saucers** or drifting **orbs** | Same 4 types (mummy, bird, saucer, orb) |
-| Screens | Backgrounds of the Sphinx, Acropolis, a castle and a city, each with its own platform layout | Our 4 levels: **Egypt, Greece, Castle, City**. Afterwards they loop with higher difficulty |
+| Screens | Backgrounds of the Sphinx, Acropolis, a castle and a city, each with its own platform layout | Our 6 levels: **Egypt, Greece, Castle, City, Volcano, Iceland**. Afterwards they loop with higher difficulty |
 
 ---
 
@@ -152,10 +152,12 @@ and must not edit packages it does not own. To ask for a contract change, leave 
 - Tests: transform-on-floor, bounce reflection, homing turn limit, and the spawner's cap.
 
 **WS4 Levels & rules** (`internal/level`, `internal/rules`)
-- Four `level.Def` structs. Each has a `Theme` index, `Platforms` (tile coords), 24 `Bombs` (pixel positions), a `LitOrder` [24]int,
-  `PlayerStart`, `EnemySpawns`, an enemy mix and timings.
-  Layouts are inspired by the original, and **City has the fewest platforms** (the original's fifth screen had none).
-  Bombs are often placed in rows of 3–4 above platforms and along the walls.
+- Six `level.Def` structs. The original plan had four; Volcano and Iceland were added later.
+  - Each has a `Name`, which is also its art theme, and `Platforms` in tile coords.
+  - Each has 24 `Bombs` laid out as row/column groups, and a `LitOrder` derived from those groups.
+  - Each also has `PlayerStart` and an `enemy.Config` (spawns, mix, cap, interval, speed).
+  - Layouts are inspired by the original, and **City has the fewest platforms** (the original's fifth screen had none).
+    Bombs sit in rows of 3–4 above platforms and in columns along the walls.
 - `rules.State`:
   - score, lives (start 3), multiplier (1–5) and bonus meter (0–100)
   - lit-chain index and lit count, round number, loop
@@ -170,7 +172,7 @@ and must not edit packages it does not own. To ask for a contract change, leave 
 **WS5 Audio** (`internal/audio`)
 - A procedural synth at 44.1 kHz with square, pulse, triangle and noise channels. No asset files.
 - SFX: jump, float, bomb, lit bomb, P pickup, coin eaten (rising pitch with the combo), death, round clear, extra life.
-- A short looping chiptune melody for each level, about 8–16 bars, defined as note data in Go, plus a title jingle.
+- Music, as built: every tune runs on the C64 SID-style engine (`sid.go`; songs in `songs.go`). There is a title tune, one tune per level (6), a high-score tune and a game-over jingle. Each has an intro and a loop, apart from the jingle, which plays once.
 - Consumes `world.Events`, and has a mute toggle on M.
 
 ### Wave 2 — integration (1 agent)
@@ -201,17 +203,19 @@ and must not edit packages it does not own. To ask for a contract change, leave 
 | M0 | Scaffold | The window opens with the background, CI-style checks pass |
 | M1 | Jack moves | Jack can run, jump, float and land on level 1 platforms |
 | M2 | Core loop | Bombs, lit chain, enemies and death work, and level 1 can be completed |
-| M3 | Full game | All 4 levels, P/B/E/S, HUD, title, game over, sound |
+| M3 | Full game | All levels (4 planned, now 6), P/B/E/S, HUD, title, game over, sound |
 | M4 | Polish | Balance, high scores, transitions, soak test green |
 
 ## 5. Assets already produced (in this repo)
 
-- `internal/art` contains 22 animations and 4 backgrounds, all drawn in Go code:
-  - Jack: idle, run, jump, float and die
+- `internal/art` contains 32 animations and 6 parallax backdrops (far, cloud and near layers), all drawn in Go code:
+  - Jack: idle, run, jump, float, land, turn and die
   - enemies: mummy, bird, saucer, orb and coin
-  - bombs: plain and lit with a sparking fuse
-  - P/B/E/S power balls, sparkle and explosion
-  - platform tiles for 4 themes
+  - bombs: plain, lit with a sparking fuse, and the white hint flash
+  - P/B/E/S power balls, the missile crate (`power_m`) and the homing `missile`
+  - effects: sparkle, twinkle, explosion, poof and boom
+  - platform tiles for 6 themes: egypt, greece, castle, city, volcano and iceland
+  - plus the bitmap font, the logo and the HUD icons
 - Regenerate with `go run ./cmd/spritegen -out assets`, then open `assets/preview/index.html`.
 - **Adding a sprite**: write a 16×16 ASCII block using the palette runes in `palette.go`, then register it in `library.go`.
   The animation name is the contract used by the game code.
@@ -229,7 +233,7 @@ and must not edit packages it does not own. To ask for a contract change, leave 
   - **Balance:** a slower start (first spawn after 200 ticks, 90-tick spawn grace, first mummy at 0.7x speed). Mummies spawn at the point farthest from Jack. Difficulty rises from L1 to L4.
     - Bot clear rate: L1 95%, L2 97%, L3 96%, L4 1%. The low L4 rate is mostly the bot struggling to path to City's high bombs, but L4 needs human playtesting.
   - **Extras:** top-5 high-score table with initials, text panels on title and banners, and a WebAssembly build (`make serve`), verified in a browser.
-  - **Open:** human playtest (feel, L4 difficulty), and audio has not been listened to.
+  - **Open:** human playtest (feel, L4 difficulty), and audio has not been listened to. L4 is City; Volcano and Iceland were added later as levels 5–6.
 - **2026-10-05 — Optional items done.**
   - **Parallax backdrops:** a wider far layer shifts with Jack's position, plus a drifting cloud layer (Egypt, Greece, Castle).
   - **Mummy transform:** a palette-tinted "poof" with a particle shockwave, bandage scraps bouncing on the floor, and rising smoke.
