@@ -39,11 +39,17 @@ func TestFreq(t *testing.T) {
 // Every song renders whole bars at its tempo, without NaNs, at a level in
 // line with the others, and with no constant clipping.
 func TestSongs(t *testing.T) {
-	songs := append([]*Song{TitleSong, HiScoreSong}, LevelSongs[:]...)
+	songs := append([]*Song{TitleSong, HiScoreSong, GameOverSong}, LevelSongs[:]...)
 	for _, s := range songs {
 		intro, loop := RenderSong(s)
+		if s.Jingle != (len(loop) == 0) {
+			t.Errorf("%s: jingle %v but loop has %d samples", s.Name, s.Jingle, len(loop))
+		}
+		if s.Jingle {
+			loop = intro // a jingle is all intro; measure that
+		}
 		bar := stepsPerBar * s.Speed * samplesPerFrm
-		if len(intro) != len(s.Intro)*bar || len(loop) != len(s.Loop)*bar {
+		if len(intro) != len(s.Intro)*bar || (!s.Jingle && len(loop) != len(s.Loop)*bar) {
 			t.Errorf("%s: lengths intro %d loop %d", s.Name, len(intro), len(loop))
 		}
 		var sum float64

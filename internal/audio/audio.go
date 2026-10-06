@@ -120,13 +120,18 @@ func (p *Player) Handle(events []world.Event) {
 
 // Music tracks: 0..3 are the levels.
 const (
-	TrackTitle   = -1
-	TrackHiScore = -2 // SID-style high-score tune
-	TrackNone    = -99
+	TrackTitle    = -1
+	TrackHiScore  = -2 // SID-style high-score tune
+	TrackGameOver = -3 // short sad jingle, plays once
+	TrackNone     = -99
 )
 
-// music is a rendered track: intro plays once, loop repeats.
-type music struct{ intro, loop []byte }
+// music is a rendered track: intro plays once, loop repeats (a jingle has
+// no loop and stops after the intro).
+type music struct {
+	intro, loop []byte
+	jingle      bool
+}
 
 // SongFor returns the SID song for a track number.
 func SongFor(track int) *Song {
@@ -135,13 +140,16 @@ func SongFor(track int) *Song {
 		return TitleSong
 	case TrackHiScore:
 		return HiScoreSong
+	case TrackGameOver:
+		return GameOverSong
 	}
 	return LevelSongs[track%len(LevelSongs)]
 }
 
 func renderTrack(track int) music {
-	intro, loop := RenderSong(SongFor(track))
-	return music{intro: ToPCM(intro), loop: ToPCM(loop)}
+	s := SongFor(track)
+	intro, loop := RenderSong(s)
+	return music{intro: ToPCM(intro), loop: ToPCM(loop), jingle: s.Jingle}
 }
 
 // PlayMusic starts a level loop (0..3), the title (TrackTitle) or the
@@ -164,11 +172,16 @@ func (p *Player) PlayMusic(track int) {
 		mu = renderTrack(track)
 		p.pcm[track] = mu
 	}
-	all := append(append([]byte(nil), mu.intro...), mu.loop...)
-	src := eaudio.NewInfiniteLoopWithIntro(bytes.NewReader(all), int64(len(mu.intro)), int64(len(mu.loop)))
-	m, err := ctx.NewPlayer(src)
-	if err != nil {
-		return
+	var m *eaudio.Player
+	if mu.jingle {
+		m = ctx.NewPlayerFromBytes(mu.intro)
+	} else {
+		all := append(append([]byte(nil), mu.intro...), mu.loop...)
+		src := eaudio.NewInfiniteLoopWithIntro(bytes.NewReader(all), int64(len(mu.intro)), int64(len(mu.loop)))
+		var err error
+		if m, err = ctx.NewPlayer(src); err != nil {
+			return
+		}
 	}
 	p.music, p.track, p.playing = m, track, true
 	m.SetVolume(musicVolume)
@@ -184,7 +197,7 @@ func (p *Player) FadeTo(track, ticks int) {
 	if p == nil { // no audio (headless tests)
 		return
 	}
-	if p.music == nil || !p.playing {
+	if !p.active() {
 		p.PlayMusic(track)
 		return
 	}
@@ -264,8 +277,14 @@ func (p *Player) PlayTest(i int) {
 
 // Track reports the music track playing (or fading), TrackNone if silent.
 func (p *Player) Track() int {
-	if p == nil || p.music == nil || !p.playing {
+	if p == nil || !p.active() {
 		return TrackNone
 	}
 	return p.track
+}
+
+// active reports whether music is playing (or paused by mute); a jingle
+// that has finished counts as silence.
+func (p *Player) active() bool {
+	return p.music != nil && p.playing && (p.music.IsPlaying() || p.Muted)
 }

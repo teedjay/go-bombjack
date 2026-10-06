@@ -20,7 +20,7 @@ inspired by Tehkan's 1984 arcade classic. Jack leaps and floats around four scre
   - smooth-gradient backdrops with parallax layers and drifting clouds
   - particle effects: cartoon bomb explosions with flares and steam, the mummy-transform "poof", and a sparkling title logo
   - a bitmap font
-- **C64 SID-style music** ([internal/audio](internal/audio)). Every tune runs on a 3-voice SID-style engine using trademark chip tricks: PWM, 50 Hz arpeggio chords, the "fat" octave-arpeggio bass, resonant filter sweeps, drums stolen from melody voices, noise-attack instruments, portamento, vibrato, ring modulation and echo. There are original tunes for the title, all six levels and the high-score screen, plus procedural sound effects.
+- **C64 SID-style music** ([internal/audio](internal/audio)). Every tune runs on a 3-voice SID-style engine using trademark chip tricks: PWM, 50 Hz arpeggio chords, the "fat" octave-arpeggio bass, resonant filter sweeps, drums stolen from melody voices, noise-attack instruments, portamento, vibrato, ring modulation and echo. There are original tunes for the title, all six levels and the high-score screen, and a sad game-over jingle, plus procedural sound effects.
 - **Top-5 high-score table** with 3-letter initials (arrows pick a letter, Z confirms, X goes back; after 30 seconds the letters on screen are saved), saved locally.
 - **Menu and sound test:** pick a difficulty (Easy, Normal or Hard; all play the regular game for now) or open **Sound & FX** to play every tune and sound effect.
 - **Runs in the browser** via a WebAssembly build.

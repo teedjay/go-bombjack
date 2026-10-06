@@ -122,6 +122,7 @@ var musicItems = []struct {
 	{"VOLCANO", 4},
 	{"ICELAND", 5},
 	{"HI-SCORE", audio.TrackHiScore},
+	{"GAME OVER", audio.TrackGameOver},
 	{"STOP", audio.TrackNone},
 }
 

@@ -278,3 +278,6 @@ and must not edit packages it does not own. To ask for a contract change, leave 
   - An ambient particle layer (`Play.bgfx`, `BurstSpec.VX/VY`): crater smoke and lava embers, and two-depth snowfall.
   - New SID tunes: **Volcano** (150 BPM E-minor pumping bass, filter-wobble arpeggios, noise-attack saw lead) and **Iceland** (airy D major, triangle lead with long echo). Both are in the sound test.
   - Level count is no longer hard-coded to 4 (`rules.Loop`, the title backdrop cycle, tests, spritegen mock scenes now built from the real level data).
+- **2026-10-06 — Game-over jingle.** `Song.Jingle` plays once (no loop). `GameOverSong` is a 4.5 s A-minor lament: a triangle lead with deep vibrato, a falling bass and slow filtered arpeggios.
+  - It plays on the game-over screen, which now waits 6.5 s (skippable after 1 s), and is in the sound test.
+  - A finished jingle counts as silence, so `FadeTo` starts the next track immediately.

@@ -171,14 +171,18 @@ type GameOver struct {
 	t     int
 }
 
+// gameOverTicks lets the sad jingle play out before moving on (skippable
+// after a second with jump/enter).
+const gameOverTicks = 390
+
 func NewGameOver(g *Game, score int) *GameOver {
-	g.Audio.StopMusic()
+	g.Audio.PlayMusic(audio.TrackGameOver)
 	return &GameOver{score: score}
 }
 
 func (o *GameOver) Update(g *Game, c world.Controls) Scene {
 	o.t++
-	if o.t > 240 || (o.t > 60 && (c.Start || c.JumpPressed)) {
+	if o.t > gameOverTicks || (o.t > 60 && (c.Start || c.JumpPressed)) {
 		if g.Qualifies(o.score) {
 			// the SID tune plays through initials entry and the table
 			g.Audio.PlayMusic(audio.TrackHiScore)

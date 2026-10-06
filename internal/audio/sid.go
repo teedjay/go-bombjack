@@ -174,6 +174,7 @@ type Song struct {
 	EchoSteps   int     // echo delay in steps
 	Mix         [3]float64
 	Intro, Loop []Bar
+	Jingle      bool // play once (Intro only, Loop empty) instead of looping
 }
 
 // B builds a bar from 16-step strings; chord is the arpeggio's notes.

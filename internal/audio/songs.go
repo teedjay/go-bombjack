@@ -392,3 +392,26 @@ var HiScoreSong = func() *Song {
 		},
 	}
 }()
+
+// --------------------------------------------------------------- game over --
+
+// GameOverSong: a short, sad lament in A minor, played once. A triangle lead
+// with deep vibrato sighs down E-D-C-B, then G#-A over a falling bass and
+// slow held arpeggios under a closing filter. No drums; the last bar is
+// silence so the release and echo can ring out.
+var GameOverSong = &Song{
+	Name: "gameover", Speed: 7, Jingle: true,
+	Drums: pattern("................"),
+	Stabs: pattern("x---------------"),
+	Bass:  Instr{Wave: sidTri, A: 0.01, D: 0.8, S: 0.7, R: 0.4},
+	Chord: Instr{Wave: sidPulse, PW: 0.4, PWMDepth: 0.2, PWMRate: 0.3, A: 0.04, D: 0.9, S: 0.5, R: 0.5,
+		Filter: true, Cutoff: 1600, CutoffEnd: 500, FilterLFO: 0.2, Q: 0.4},
+	Lead: Instr{Wave: sidTri, A: 0.02, D: 0.7, S: 0.8, R: 0.5,
+		Vibrato: 0.016, VibDelay: 6, Slide: 6},
+	Echo: 0.25, EchoSteps: 3, Mix: [3]float64{0.45, 0.22, 0.45},
+	Intro: []Bar{
+		B("A2 - - - - - - - G2 - - - - - - -", "E5 - - - D5 - - - C5 - - - B4 - - -", "A3", "C4", "E4"),
+		B("E2 - - - - - - - A1 - - - - - - .", "G#4 - - - - - - - A4 - - - - - - .", "A3", "C4", "E4"),
+		B(rest, rest, "A3", "C4", "E4"),
+	},
+}

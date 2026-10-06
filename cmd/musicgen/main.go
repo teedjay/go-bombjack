@@ -21,13 +21,13 @@ func main() {
 	if err := os.MkdirAll(*out, 0o755); err != nil {
 		log.Fatal(err)
 	}
-	songs := append([]*audio.Song{audio.TitleSong, audio.HiScoreSong}, audio.LevelSongs[:]...)
+	songs := append([]*audio.Song{audio.TitleSong, audio.HiScoreSong, audio.GameOverSong}, audio.LevelSongs[:]...)
 	tracks := map[string][]float32{}
 	for i, s := range songs {
 		intro, loop := audio.RenderSong(s)
 		name := s.Name + ".wav"
-		if i >= 2 {
-			name = fmt.Sprintf("level%d_%s.wav", i-1, s.Name)
+		if i >= 3 {
+			name = fmt.Sprintf("level%d_%s.wav", i-2, s.Name)
 		}
 		tracks[name] = append(append(append([]float32(nil), intro...), loop...), loop...) // intro + loop twice
 	}
