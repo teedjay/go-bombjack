@@ -26,4 +26,5 @@ type Config struct {
 	StartCount int
 	SpawnEvery int     // ticks between spawns
 	Speed      float64 // base speed multiplier (1.0 = level 1)
+	FirstDelay int     // ticks before the first enemy (0 = default)
 }

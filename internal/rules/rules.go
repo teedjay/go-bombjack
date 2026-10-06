@@ -3,9 +3,6 @@
 package rules
 
 import (
-	"math"
-
-	"bombjack/internal/enemy"
 	"bombjack/internal/level"
 	"bombjack/internal/world"
 )
@@ -21,6 +18,7 @@ type State struct {
 	Round      int // 0-based, increases forever
 	CoinCombo  int // index into coin value table during one P
 	Missiles   int // homing missiles in stock (0..MaxMissiles)
+	Diff       Difficulty
 
 	// LitOrder is the level's lit-bomb sequence (set by NewForLevel/NextRound).
 	LitOrder []int
@@ -37,9 +35,9 @@ var coinValues = [...]int{100, 200, 300, 500, 800, 1200, 2000}
 
 // Missile stock and scoring.
 const (
-	StartMissiles  = 3
+	StartMissiles  = 3 // per life (Easy/Normal; see Profiles)
 	MaxMissiles    = 9
-	MissileEvery   = 600  // ticks between missile crate spawns
+	MissileEvery   = 600  // ticks between missile crate spawns (Easy; see Profiles)
 	MissileKillPts = 500  // per enemy destroyed (× multiplier)
 	MissileFullPts = 1000 // crate picked up while already holding MaxMissiles
 	MissilesPerBox = 3    // missiles in one crate (capped at MaxMissiles)
@@ -101,22 +99,6 @@ func LitBonus(lit int) int {
 		return 10000
 	}
 	return 0
-}
-
-// FrightDuration returns the P duration in ticks for a loop.
-func FrightDuration(loop int) int {
-	sec := max(5-loop, 2)
-	return sec * 60
-}
-
-// Scale returns cfg harder by loop: +10% speed and -15% spawn interval per loop.
-func Scale(cfg enemy.Config, loop int) enemy.Config {
-	if loop <= 0 {
-		return cfg
-	}
-	cfg.Speed *= 1 + 0.1*float64(loop)
-	cfg.SpawnEvery = int(math.Round(float64(cfg.SpawnEvery) * math.Pow(0.85, float64(loop))))
-	return cfg
 }
 
 func (s *State) add(w *world.World, pts int, pos world.Vec) {
@@ -200,7 +182,7 @@ func (s *State) Apply(w *world.World) {
 		case world.EvPickupTaken:
 			switch e.Pickup {
 			case world.PickupP:
-				w.FrightTicks = FrightDuration(s.Loop())
+				w.FrightTicks = FrightDuration(s.Loop(), s.Diff)
 				s.CoinCombo = 0
 				if w.Rng.IntN(40) == 0 {
 					spawnPickup(w, world.PickupS)
@@ -233,12 +215,12 @@ func (s *State) Apply(w *world.World) {
 			if s.Lives > 0 {
 				s.Lives--
 			}
-			s.Missiles = StartMissiles // every new life starts with a fresh stock
+			s.Missiles = s.Diff.Profile().Missiles // every new life starts with a fresh stock
 		}
 	}
 	// a missile crate drops in regularly (one on the field at a time)
 	s.mTimer++
-	if s.mTimer >= MissileEvery {
+	if s.mTimer >= s.Diff.Profile().CrateEvery {
 		s.mTimer = 0
 		onField := false
 		for _, p := range w.Pickups {

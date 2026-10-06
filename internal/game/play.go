@@ -86,7 +86,9 @@ type Play struct {
 // NewSession starts a new game at round 0.
 func NewSession(g *Game) *Play {
 	d := level.Levels[0]
-	return newRound(g, rules.NewForLevel(d.LitOrder, 0))
+	r := rules.NewForLevel(d.LitOrder, 0)
+	r.SetDifficulty(g.Difficulty)
+	return newRound(g, r)
 }
 
 // NewPlay builds round `round` with fresh rules (used by tests).
@@ -102,7 +104,7 @@ func newRound(g *Game, r *rules.State) *Play {
 	w.Player = j
 	ms := &missile.Manager{}
 	w.Systems = append(w.Systems,
-		enemy.NewSpawner(rules.Scale(d.Enemies, r.Loop())),
+		enemy.NewSpawner(rules.Scale(d.Enemies, r.Loop(), r.Diff)),
 		rules.PickupMover{},
 		ms)
 	p := &Play{World: w, Rules: r, Jack: j, Def: d, missiles: ms}
@@ -469,8 +471,10 @@ func (p *Play) drawFrame(g *Game, screen *ebiten.Image) {
 	p.drawHUD(g, screen)
 
 	switch {
-	case p.paused, p.phase == phaseIntro:
+	case p.paused:
 		panel(screen, 48, 90, ScreenW-96, 34)
+	case p.phase == phaseIntro:
+		panel(screen, 48, 90, ScreenW-96, 46)
 	case p.phase == phaseClear:
 		panel(screen, 40, 84, ScreenW-80, 48)
 	}
@@ -481,6 +485,7 @@ func (p *Play) drawFrame(g *Game, screen *ebiten.Image) {
 	case p.phase == phaseIntro:
 		g.centerText(screen, fmt.Sprintf("ROUND %d", p.Rules.Round+1), 96, colYellow)
 		g.centerText(screen, "GET READY!", 112, colWhite)
+		g.centerText(screen, p.Rules.Diff.String(), 124, colCyan)
 	case p.phase == phaseClear:
 		g.centerText(screen, "ROUND CLEAR!", 90, colYellow)
 		g.centerText(screen, fmt.Sprintf("LIT BOMBS %d", p.Rules.LitCount), 108, colWhite)

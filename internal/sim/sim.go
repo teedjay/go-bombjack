@@ -23,14 +23,18 @@ type Round struct {
 }
 
 // NewRound builds round `round` (0-based, loops through the levels).
-func NewRound(round int, seed uint64) *Round {
+func NewRound(round int, seed uint64) *Round { return NewRoundDiff(round, seed, rules.Easy) }
+
+// NewRoundDiff is NewRound at a given difficulty.
+func NewRoundDiff(round int, seed uint64, diff rules.Difficulty) *Round {
 	d := level.Levels[round%len(level.Levels)]
 	r := rules.NewForLevel(d.LitOrder, round)
+	r.SetDifficulty(diff)
 	w := level.Build(round, seed)
 	j := player.New(d.PlayerStart)
 	w.Player = j
 	w.Systems = append(w.Systems,
-		enemy.NewSpawner(rules.Scale(d.Enemies, r.Loop())),
+		enemy.NewSpawner(rules.Scale(d.Enemies, r.Loop(), r.Diff)),
 		rules.PickupMover{})
 	return &Round{World: w, Rules: r, Jack: j, Def: d}
 }
@@ -75,7 +79,12 @@ type Result struct {
 
 // Run plays one round with the bot until clear, game over or maxTicks.
 func Run(round int, seed uint64, maxTicks int) Result {
-	r := NewRound(round, seed)
+	return RunDiff(round, seed, maxTicks, rules.Easy)
+}
+
+// RunDiff is Run at a given difficulty.
+func RunDiff(round int, seed uint64, maxTicks int, diff rules.Difficulty) Result {
+	r := NewRoundDiff(round, seed, diff)
 	b := NewBotSeeded(seed)
 	res := Result{FirstDeathTick: -1}
 	for t := 0; t < maxTicks; t++ {

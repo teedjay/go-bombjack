@@ -7,17 +7,8 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"bombjack/internal/audio"
+	"bombjack/internal/rules"
 	"bombjack/internal/world"
-)
-
-// Difficulty is chosen in the menu. It is stored for later use; for now
-// every difficulty plays the regular game.
-type Difficulty int
-
-const (
-	Easy Difficulty = iota
-	Normal
-	Hard
 )
 
 // menuTimeout returns to the title after this long without input.
@@ -80,7 +71,7 @@ func (m *Menu) Update(g *Game, c world.Controls) Scene {
 		if m.sel == len(menuItems)-1 {
 			return NewSoundTest(g)
 		}
-		g.Difficulty = Difficulty(m.sel)
+		g.Difficulty = rules.Difficulty(m.sel)
 		return NewSession(g)
 	}
 	return m

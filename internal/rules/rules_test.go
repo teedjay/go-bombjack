@@ -169,11 +169,11 @@ func TestThresholdsAndScale(t *testing.T) {
 	if kinds[world.PickupB] != 2 || kinds[world.PickupE] != 1 {
 		t.Fatalf("%v", kinds)
 	}
-	c := Scale(enemy.Config{Speed: 1, SpawnEvery: 400}, 2)
+	c := Scale(enemy.Config{Speed: 1, SpawnEvery: 400}, 2, Easy)
 	if c.Speed != 1.2 || c.SpawnEvery != 289 {
 		t.Fatalf("%+v", c)
 	}
-	if FrightDuration(9) != 120 {
+	if FrightDuration(9, Easy) != 120 {
 		t.Fatal("min fright")
 	}
 }

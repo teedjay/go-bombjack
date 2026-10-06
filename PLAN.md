@@ -285,3 +285,19 @@ and must not edit packages it does not own. To ask for a contract change, leave 
 - **2026-10-06 — Game-over jingle.** `Song.Jingle` plays once (no loop). `GameOverSong` is a 4.5 s A-minor lament: a triangle lead with deep vibrato, a falling bass and slow filtered arpeggios.
   - It plays on the game-over screen, which now waits 6.5 s (skippable after 1 s), and is in the sound test.
   - A finished jingle counts as silence, so `FadeTo` starts the next track immediately.
+- **2026-10-06 — Difficulty levels.** `rules/difficulty.go` adds a `Profile` per difficulty. Easy is the original tuning; Normal and Hard scale on top of each level's own settings.
+
+  | Setting | Normal | Hard |
+  |---|---|---|
+  | Enemy speed | ×1.15 | ×1.3 |
+  | Spawn interval | ×0.8 | ×0.65 |
+  | Enemy cap | +1 | +2, +1 per loop (max +3) |
+  | Enemies at start | +1 | +1 |
+  | First enemy after | 2.5 s | 1.7 s |
+  | P duration | 4 s | 3 s |
+  | Per-loop scaling | +12% speed | +15% speed, spawn interval ×0.8 |
+  | Missiles per life | 3 | 2 |
+  | Crate every | 12 s | 15 s |
+
+  - The menu choice is applied and shown on the round-start banner. `enemy.Config.FirstDelay` was added.
+  - Bot report (`go test ./internal/sim -run DifficultyReport -v`): average deaths per 1000 ticks are 0.62 on Easy, 0.88 on Normal and 1.07 on Hard. The bot never fires missiles.

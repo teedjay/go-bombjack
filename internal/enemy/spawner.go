@@ -52,6 +52,9 @@ func (s *Spawner) Update(w *world.World) {
 		s.target = min(s.Cfg.StartCount, s.Cfg.MaxEnemies)
 		s.nextGrow = s.Cfg.SpawnEvery
 		s.cooldown = firstSpawnDelay
+		if s.Cfg.FirstDelay > 0 {
+			s.cooldown = s.Cfg.FirstDelay
+		}
 	}
 	if s.Cfg.SpawnEvery > 0 {
 		s.nextGrow--

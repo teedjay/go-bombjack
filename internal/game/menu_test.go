@@ -3,6 +3,7 @@ package game
 import (
 	"testing"
 
+	"bombjack/internal/rules"
 	"bombjack/internal/world"
 )
 
@@ -10,9 +11,9 @@ import (
 func step(g *Game, s Scene, c world.Controls) Scene { return s.Update(g, c) }
 
 func TestMenuNavigationAndStart(t *testing.T) {
-	g := &Game{Table: defaultTable(), Difficulty: Normal}
+	g := &Game{Table: defaultTable(), Difficulty: rules.Normal}
 	m := NewMenu(g)
-	if m.sel != int(Normal) {
+	if m.sel != int(rules.Normal) {
 		t.Fatalf("menu should preselect the current difficulty, got %d", m.sel)
 	}
 	for i := 0; i < 12; i++ { // let the open-guard pass
@@ -32,10 +33,12 @@ func TestMenuNavigationAndStart(t *testing.T) {
 	step(g, m, world.Controls{Down: true}) // Normal -> Hard
 	if next := step(g, m, world.Controls{Start: true}); next == Scene(m) {
 		t.Fatal("enter did not start a game")
-	} else if _, ok := next.(*Play); !ok {
+	} else if pl, ok := next.(*Play); !ok {
 		t.Fatalf("expected a game, got %T", next)
+	} else if pl.Rules.Diff != rules.Hard || pl.Rules.Missiles != rules.Hard.Profile().Missiles {
+		t.Fatalf("game started at %v with %d missiles, want HARD", pl.Rules.Diff, pl.Rules.Missiles)
 	}
-	if g.Difficulty != Hard {
+	if g.Difficulty != rules.Hard {
 		t.Fatalf("difficulty %d, want Hard", g.Difficulty)
 	}
 }

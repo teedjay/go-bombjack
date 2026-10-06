@@ -16,6 +16,7 @@ import (
 	"bombjack/internal/audio"
 	"bombjack/internal/gfx"
 	"bombjack/internal/input"
+	"bombjack/internal/rules"
 	"bombjack/internal/world"
 )
 
@@ -48,7 +49,7 @@ type Game struct {
 	Audio      *audio.Player
 	HiScore    int
 	Table      []HiEntry
-	Difficulty Difficulty // chosen in the menu (not yet used by the rules)
+	Difficulty rules.Difficulty // chosen in the menu
 	Tick       int
 	scene      Scene
 	auto       *Autoshot
@@ -56,7 +57,7 @@ type Game struct {
 }
 
 func New() *Game {
-	g := &Game{Sheet: gfx.Load(), Audio: audio.New(), Table: loadTable(), Difficulty: Normal}
+	g := &Game{Sheet: gfx.Load(), Audio: audio.New(), Table: loadTable(), Difficulty: rules.Normal}
 	g.HiScore = g.Table[0].Score
 	g.scene = NewTitle(g)
 	g.auto = autoshotFromEnv(g)
