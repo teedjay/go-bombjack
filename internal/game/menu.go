@@ -191,7 +191,7 @@ func (st *SoundTest) Draw(g *Game, screen *ebiten.Image) {
 		}
 		g.Sheet.Text(screen, col.title, col.x, 34, hcol)
 		for i, name := range col.items {
-			y := float64(50 + i*13)
+			y := float64(50 + i*12)
 			c := color.Color(colWhite)
 			if ci == 0 && musicItems[i].track == playing && playing != audio.TrackNone {
 				c = colGreen // currently playing tune
@@ -210,8 +210,8 @@ func (st *SoundTest) Draw(g *Game, screen *ebiten.Image) {
 		}
 	}
 	if g.Audio.Muted {
-		g.centerText(screen, "MUTED - PRESS M", 206, colRed)
+		g.centerText(screen, "MUTED - PRESS M", 196, colRed)
 	}
-	g.centerText(screen, "ARROWS  ENTER=PLAY", 218, colCyan)
-	g.centerText(screen, "ESC BACK TO TITLE", 228, colCyan)
+	g.centerText(screen, "ARROWS  ENTER=PLAY", 208, colCyan)
+	g.centerText(screen, "ESC BACK TO TITLE", 219, colCyan)
 }
