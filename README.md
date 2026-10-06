@@ -22,6 +22,7 @@ inspired by Tehkan's 1984 arcade classic. Jack leaps and floats around four scre
   - a bitmap font
 - **Procedural chiptune** sound effects and music ([internal/audio](internal/audio)), including a **C64 SID-style high-score tune** with PWM, 50 Hz arpeggios, filter sweeps, voice-stolen drums and a lead echo.
 - **Top-5 high-score table** with 3-letter initials (arrows pick a letter, Z confirms, X goes back; after 30 seconds the letters on screen are saved), saved locally.
+- **Menu and sound test:** pick a difficulty (Easy, Normal or Hard; all play the regular game for now) or open **Sound & FX** to play every tune and sound effect.
 - **Runs in the browser** via a WebAssembly build.
 
 ## Controls
@@ -32,11 +33,11 @@ inspired by Tehkan's 1984 arcade classic. Jack leaps and floats around four scre
 | Z / Space / ↑ | Jump. Tap repeatedly in mid-air to **fly**: each tap gives a little lift, then gravity takes over |
 | ↓ | Cancel float (drop faster) |
 | X | Fire a **homing missile** at the closest enemy |
-| Enter | Start |
+| Enter / Z | Title: open the menu (Easy / Normal / Hard / Sound & FX). In menus: arrows select, Enter or Z confirms |
 | P / Esc | Pause. Esc again while paused quits to the title |
 | M | Mute |
 | I | Cheat: toggle invincibility |
-| Esc (title screen) | Quit |
+| Esc | Menus and sound test: back to the title. Title screen: quit |
 
 A standard gamepad also works.
 
@@ -87,7 +88,7 @@ The `web/` folder is static, so it can be hosted anywhere.
 | `make test` | Run all unit tests. Game logic is headless and runs without a window |
 | `make lint` | gofmt check + `go vet` |
 | `make sprites` | Render all sprites/backgrounds to `assets/` plus an animated preview at `assets/preview/index.html` |
-| `make shots ROUND=2 TICKS=300,900` | Autopilot run that saves screenshots to `shots/` (`ROUND=-1` = title screen, `ROUND=0i` = round 0 with no input) |
+| `make shots ROUND=2 TICKS=300,900` | Autopilot run that saves screenshots to `shots/` (`ROUND=-1` title, `-2` menu, `-3` sound test, `0i` = round 0 with no input) |
 | `make web` / `make serve` | Build or serve the WebAssembly version |
 | `make music` | Render all music to WAV files in `music/` |
 

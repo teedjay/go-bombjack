@@ -44,18 +44,19 @@ type Scene interface {
 
 // Game implements ebiten.Game.
 type Game struct {
-	Sheet   *gfx.Sheet
-	Audio   *audio.Player
-	HiScore int
-	Table   []HiEntry
-	Tick    int
-	scene   Scene
-	auto    *Autoshot
-	autoErr error
+	Sheet      *gfx.Sheet
+	Audio      *audio.Player
+	HiScore    int
+	Table      []HiEntry
+	Difficulty Difficulty // chosen in the menu (not yet used by the rules)
+	Tick       int
+	scene      Scene
+	auto       *Autoshot
+	autoErr    error
 }
 
 func New() *Game {
-	g := &Game{Sheet: gfx.Load(), Audio: audio.New(), Table: loadTable()}
+	g := &Game{Sheet: gfx.Load(), Audio: audio.New(), Table: loadTable(), Difficulty: Normal}
 	g.HiScore = g.Table[0].Score
 	g.scene = NewTitle(g)
 	g.auto = autoshotFromEnv(g)

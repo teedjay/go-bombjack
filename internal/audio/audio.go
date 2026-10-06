@@ -19,7 +19,8 @@ const (
 
 var ctx *eaudio.Context
 
-// Player plays SFX for world events and per-level music.
+// Player plays SFX for world events and per-level music. A nil *Player is
+// valid and silent, so game logic can run headless.
 type Player struct {
 	Muted bool
 
@@ -76,6 +77,9 @@ func (p *Player) play(id int) {
 
 // Handle plays sounds for this tick's events.
 func (p *Player) Handle(events []world.Event) {
+	if p == nil { // no audio (headless tests)
+		return
+	}
 	for _, e := range events {
 		switch e.Kind {
 		case world.EvJump:
@@ -138,6 +142,9 @@ func renderTrack(track int) music {
 // PlayMusic starts a level loop (0..3), the title (TrackTitle) or the
 // high-score tune (TrackHiScore). It cancels any fade in progress.
 func (p *Player) PlayMusic(track int) {
+	if p == nil { // no audio (headless tests)
+		return
+	}
 	if track >= 0 {
 		track %= len(Tracks)
 	}
@@ -169,6 +176,9 @@ func (p *Player) PlayMusic(track int) {
 // track. With nothing playing it starts track at once; if track is already
 // playing it keeps going.
 func (p *Player) FadeTo(track, ticks int) {
+	if p == nil { // no audio (headless tests)
+		return
+	}
 	if p.music == nil || !p.playing {
 		p.PlayMusic(track)
 		return
@@ -181,6 +191,9 @@ func (p *Player) FadeTo(track, ticks int) {
 
 // Update advances fades; call once per tick.
 func (p *Player) Update() {
+	if p == nil { // no audio (headless tests)
+		return
+	}
 	if p.fadeLeft <= 0 {
 		return
 	}
@@ -197,6 +210,9 @@ func (p *Player) Update() {
 }
 
 func (p *Player) StopMusic() {
+	if p == nil { // no audio (headless tests)
+		return
+	}
 	if p.music != nil {
 		p.music.Pause()
 		p.music.Close()
@@ -207,6 +223,9 @@ func (p *Player) StopMusic() {
 
 // ToggleMute flips mute; music is paused/resumed accordingly.
 func (p *Player) ToggleMute() {
+	if p == nil { // no audio (headless tests)
+		return
+	}
 	p.Muted = !p.Muted
 	if p.music == nil {
 		return
@@ -216,4 +235,32 @@ func (p *Player) ToggleMute() {
 	} else {
 		p.music.Play()
 	}
+}
+
+// SoundTest lists every sound effect by name, in sound-test order.
+var SoundTest = []struct {
+	Name string
+	id   int
+}{
+	{"JUMP", sfxJump}, {"FLOAT", sfxFloat}, {"BOMB", sfxBomb}, {"LIT BOMB", sfxBombLit},
+	{"PICKUP", sfxPickup}, {"COIN", sfxCoin0 + 3}, {"HIT", sfxHit}, {"DIED", sfxDied},
+	{"ROUND CLEAR", sfxClear}, {"EXTRA LIFE", sfxExtra}, {"LAUNCH", sfxLaunch}, {"BLAST", sfxBlast},
+}
+
+// PlayTest plays SoundTest[i].
+func (p *Player) PlayTest(i int) {
+	if p == nil { // no audio (headless tests)
+		return
+	}
+	if i >= 0 && i < len(SoundTest) {
+		p.play(SoundTest[i].id)
+	}
+}
+
+// Track reports the music track playing (or fading), TrackNone if silent.
+func (p *Player) Track() int {
+	if p == nil || p.music == nil || !p.playing {
+		return TrackNone
+	}
+	return p.track
 }

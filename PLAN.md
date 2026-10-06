@@ -256,3 +256,8 @@ and must not edit packages it does not own. To ask for a contract change, leave 
   - It plays from initials entry through the table, and fades out (1.5 s) into the title music via `audio.FadeTo`.
   - `make music` exports all tracks as WAV files.
 - **2026-10-06 — Title pages.** The title panel cycles through four 6 s pages: controls, high scores, "Meet the enemies" (animated, with behaviour hints) and "Bonus items" (a 3×3 grid of animated pickups with their values). Added a `+` glyph to the font.
+- **2026-10-06 — Menu and sound test.**
+  - Enter/Z on the title opens a menu: Easy / Normal / Hard / Sound & FX. A difficulty is stored in `Game.Difficulty` but not used yet, so every difficulty starts the regular game.
+  - The menu returns to the title after 30 s without input, or on Esc.
+  - The sound test plays any tune or sound effect (`audio.SoundTest`, `PlayTest`); Esc returns to the title.
+  - A nil `*audio.Player` is now valid and silent, for headless tests. Added the `&` and `>` font glyphs.

@@ -51,8 +51,8 @@ func (t *Title) Update(g *Game, c world.Controls) Scene {
 				Fade: colOrange, Speed: 0.5, Gravity: 0.03, Life: 50})
 		}
 	}
-	if t.t > 20 && (c.Start || c.JumpPressed) {
-		return NewSession(g)
+	if t.t > 20 && (c.Start || c.Confirm) {
+		return NewMenu(g)
 	}
 	return t
 }
@@ -63,6 +63,32 @@ const (
 	titlePageTicks = 360 // 6 seconds per page
 	titlePanelX    = 24
 )
+
+// drawTitleBackdrop draws the drifting parallax backdrop, the logo and its
+// shine sweep (shared by the title and menu screens).
+func drawTitleBackdrop(g *Game, screen *ebiten.Image, tick int) {
+	screen.Fill(colBlack)
+	level := (tick / 300) % 4
+	g.Sheet.DrawBackground(screen, level, HUDH, math.Sin(float64(tick)/120), tick*3)
+
+	logo := g.Sheet.Logo()
+	lx, ly := logoOrigin(g)
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Scale(logoScale, logoScale)
+	op.GeoM.Translate(lx, ly)
+	screen.DrawImage(logo, op)
+	// shine: a bright band sweeping across the logo every 4 seconds
+	lw, lh := logo.Bounds().Dx(), logo.Bounds().Dy()
+	if bx := tick%240*2 - 20; bx > -6 && bx < lw {
+		x0, x1 := max(bx, 0), min(bx+6, lw)
+		band := logo.SubImage(image.Rect(x0, 0, x1, lh)).(*ebiten.Image)
+		op := &ebiten.DrawImageOptions{Blend: ebiten.BlendLighter}
+		op.ColorScale.ScaleAlpha(0.7)
+		op.GeoM.Scale(logoScale, logoScale)
+		op.GeoM.Translate(lx+float64(x0*logoScale), ly)
+		screen.DrawImage(band, op)
+	}
+}
 
 // drawEnemyPage introduces the four enemies, two per row.
 func drawEnemyPage(g *Game, screen *ebiten.Image, tick int) {
@@ -110,27 +136,7 @@ func drawPickupPage(g *Game, screen *ebiten.Image, tick int) {
 var titleCycle = []color.Color{colYellow, colOrange, colRed, colPink, colPurple, colCyan, colWhite}
 
 func (t *Title) Draw(g *Game, screen *ebiten.Image) {
-	screen.Fill(colBlack)
-	level := (t.t / 300) % 4
-	g.Sheet.DrawBackground(screen, level, HUDH, math.Sin(float64(t.t)/120), t.t*3)
-
-	logo := g.Sheet.Logo()
-	lx, ly := logoOrigin(g)
-	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(logoScale, logoScale)
-	op.GeoM.Translate(lx, ly)
-	screen.DrawImage(logo, op)
-	// shine: a bright band sweeping across the logo every 4 seconds
-	lw, lh := logo.Bounds().Dx(), logo.Bounds().Dy()
-	if bx := t.t%240*2 - 20; bx > -6 && bx < lw {
-		x0, x1 := max(bx, 0), min(bx+6, lw)
-		band := logo.SubImage(image.Rect(x0, 0, x1, lh)).(*ebiten.Image)
-		op := &ebiten.DrawImageOptions{Blend: ebiten.BlendLighter}
-		op.ColorScale.ScaleAlpha(0.7)
-		op.GeoM.Scale(logoScale, logoScale)
-		op.GeoM.Translate(lx+float64(x0*logoScale), ly)
-		screen.DrawImage(band, op)
-	}
+	drawTitleBackdrop(g, screen, t.t)
 	t.fx.Draw(screen, 0)
 
 	g.centerText(screen, fmt.Sprintf("HI %07d", g.HiScore), 4, colYellow)

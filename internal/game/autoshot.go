@@ -43,8 +43,14 @@ func autoshotFromEnv(g *Game) *Autoshot {
 	}
 	_ = os.MkdirAll(a.dir, 0o755)
 	g.Audio.ToggleMute()
-	if round < 0 {
+	if round < 0 { // -1 title, -2 menu, -3 sound test; no input
 		a.idle = true
+		switch round {
+		case -2:
+			g.scene = NewMenu(g)
+		case -3:
+			g.scene = NewSoundTest(g)
+		}
 		return a
 	}
 	d := NewSession(g)
