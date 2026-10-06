@@ -128,15 +128,20 @@ const (
 // music is a rendered track: intro plays once, loop repeats.
 type music struct{ intro, loop []byte }
 
-func renderTrack(track int) music {
+// SongFor returns the SID song for a track number.
+func SongFor(track int) *Song {
 	switch track {
 	case TrackTitle:
-		return music{loop: ToPCM(Title.Render())}
+		return TitleSong
 	case TrackHiScore:
-		intro, loop := HiScoreSong()
-		return music{intro: ToPCM(intro), loop: ToPCM(loop)}
+		return HiScoreSong
 	}
-	return music{loop: ToPCM(Tracks[track%len(Tracks)].Render())}
+	return LevelSongs[track%len(LevelSongs)]
+}
+
+func renderTrack(track int) music {
+	intro, loop := RenderSong(SongFor(track))
+	return music{intro: ToPCM(intro), loop: ToPCM(loop)}
 }
 
 // PlayMusic starts a level loop (0..3), the title (TrackTitle) or the
@@ -146,7 +151,7 @@ func (p *Player) PlayMusic(track int) {
 		return
 	}
 	if track >= 0 {
-		track %= len(Tracks)
+		track %= len(LevelSongs)
 	}
 	p.fadeLeft = 0
 	if p.music != nil && p.playing && p.track == track {

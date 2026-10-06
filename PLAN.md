@@ -261,3 +261,12 @@ and must not edit packages it does not own. To ask for a contract change, leave 
   - The menu returns to the title after 30 s without input, or on Esc.
   - The sound test plays any tune or sound effect (`audio.SoundTest`, `PlayTest`); Esc returns to the title.
   - A nil `*audio.Player` is now valid and silent, for headless tests. Added the `&` and `>` font glyphs.
+- **2026-10-06 — All music is SID-style.** The old line tracker is gone. `sid.go` is now a general engine (`Song`/`Instr`/`Bar`, per-instrument tricks, loudness normalised to RMS 0.19), and `songs.go` holds six original tunes:
+  - **Title:** heroic C, running arpeggios with filter LFO, noise-attack saw lead.
+  - **Egypt:** E Phrygian dominant, drone bass, sliding narrow-pulse lead.
+  - **Greece:** bouncy D major, skank arpeggios, fast PWM lead.
+  - **Castle:** D harmonic minor, galloping filtered saw bass. The lead was later redone as a catchy PWM pulse lead built on a syncopated 3-3-2 hook (no ring-mod bells).
+  - **City:** E-minor funk, fat octave-arpeggio bass, echoed lead.
+  - **Hi-score:** unchanged.
+
+  Each has an intro and a 16-bar loop (8 bars for the hi-score), 25–36 s long.

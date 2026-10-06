@@ -21,14 +21,15 @@ func main() {
 	if err := os.MkdirAll(*out, 0o755); err != nil {
 		log.Fatal(err)
 	}
-	intro, loop := audio.HiScoreSong()
-	hs := append(append(append([]float32(nil), intro...), loop...), loop...) // intro + loop twice
-	tracks := map[string][]float32{
-		"hiscore.wav": hs,
-		"title.wav":   audio.Title.Render(),
-	}
-	for i, t := range audio.Tracks {
-		tracks[fmt.Sprintf("level%d.wav", i+1)] = t.Render()
+	songs := append([]*audio.Song{audio.TitleSong, audio.HiScoreSong}, audio.LevelSongs[:]...)
+	tracks := map[string][]float32{}
+	for i, s := range songs {
+		intro, loop := audio.RenderSong(s)
+		name := s.Name + ".wav"
+		if i >= 2 {
+			name = fmt.Sprintf("level%d_%s.wav", i-1, s.Name)
+		}
+		tracks[name] = append(append(append([]float32(nil), intro...), loop...), loop...) // intro + loop twice
 	}
 	for name, mono := range tracks {
 		path := filepath.Join(*out, name)

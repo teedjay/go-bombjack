@@ -4,7 +4,6 @@ import (
 	"math"
 	"math/rand/v2"
 	"strconv"
-	"strings"
 )
 
 // SampleRate is the output rate in Hz.
@@ -126,100 +125,6 @@ func Freq(name string) float64 {
 	midi := 12*(oct+1) + semi
 	return 440 * math.Pow(2, float64(midi-69)/12)
 }
-
-// Step is one note: Freq 0 is a rest; Len is in eighth-note units.
-type Step struct {
-	Freq float64
-	Len  int
-}
-
-// Parse reads "C5:2 E5:1 R:1" into steps ('|' bar separators are ignored).
-func Parse(s string) []Step {
-	var out []Step
-	for _, tok := range strings.Fields(s) {
-		if tok == "|" {
-			continue
-		}
-		name, l, _ := strings.Cut(tok, ":")
-		n, _ := strconv.Atoi(l)
-		out = append(out, Step{Freq(name), n})
-	}
-	return out
-}
-
-// Units sums the length of steps.
-func Units(steps []Step) int {
-	n := 0
-	for _, s := range steps {
-		n += s.Len
-	}
-	return n
-}
-
-// RenderVoice renders a melody line; unit is the duration of one length unit
-// in seconds.
-func RenderVoice(steps []Step, unit float64, w Wave, vol float64, env ADSR) []float32 {
-	out := make([]float32, int(float64(Units(steps))*unit*SampleRate)+1)
-	pos := 0.0
-	for _, st := range steps {
-		d := float64(st.Len) * unit
-		if st.Freq > 0 {
-			note := Sweep(w, st.Freq, st.Freq, d*0.92, vol, env)
-			Mix(out, note, int(pos*SampleRate))
-		}
-		pos += d
-	}
-	return out
-}
-
-// Track is a looping 2-voice tune.
-type Track struct {
-	BPM        float64
-	Lead, Bass string
-}
-
-// Render mixes both voices into one mono buffer.
-func (t Track) Render() []float32 {
-	unit := 60 / t.BPM / 2 // eighth note
-	lead := RenderVoice(Parse(t.Lead), unit, Pulse25, 0.2, ADSR{0.005, 0.06, 0.6, 0.04})
-	bass := RenderVoice(Parse(t.Bass), unit, Triangle, 0.32, ADSR{0.005, 0.05, 0.8, 0.03})
-	n := max(len(lead), len(bass))
-	out := make([]float32, n)
-	Mix(out, lead, 0)
-	Mix(out, bass, 0)
-	return out
-}
-
-// bounce builds an octave-bouncing bass bar (8 units) for each root.
-func bounce(roots ...string) string {
-	var b strings.Builder
-	for _, r := range roots {
-		up := r[:len(r)-1] + string(r[len(r)-1]+1)
-		b.WriteString(r + ":2 " + up + ":2 " + r + ":2 " + up + ":2 ")
-	}
-	return b.String()
-}
-
-// Tracks holds the music. Index 0..3 are the levels; Title is separate.
-var Tracks = [4]Track{
-	{150, "E5:1 G5:1 C6:2 G5:1 E5:1 G5:2 | D5:1 F5:1 B5:2 F5:1 D5:1 F5:2 | C5:1 E5:1 A5:2 E5:1 C5:1 E5:2 | D5:1 G5:1 B5:2 G5:2 R:2 | " +
-		"C6:2 B5:1 A5:1 G5:2 E5:2 | F5:2 A5:2 C6:4 | B5:1 A5:1 G5:1 F5:1 E5:2 D5:2 | C5:4 G4:2 C5:2",
-		bounce("C3", "G2", "A2", "G2", "F3", "F3", "G2", "C3")},
-	{140, "A4:2 C5:1 E5:1 A5:2 E5:2 | G4:2 B4:1 D5:1 G5:2 D5:2 | F4:2 A4:1 C5:1 F5:2 C5:2 | E4:2 G#4:1 B4:1 E5:4 | " +
-		"E5:1 D5:1 C5:1 B4:1 A4:4 | D5:1 C5:1 B4:1 A4:1 G4:4 | A4:1 C5:1 F5:2 E5:2 C5:2 | B4:2 G#4:2 A4:4",
-		bounce("A2", "G2", "F2", "E2", "A2", "G2", "F2", "E2")},
-	{130, "D5:2 F5:2 A5:2 F5:2 | Bb4:2 D5:2 F5:2 D5:2 | C5:2 E5:2 G5:2 E5:2 | A4:2 C#5:2 E5:4 | " +
-		"A5:1 G5:1 F5:1 E5:1 D5:4 | F5:1 E5:1 D5:1 C5:1 Bb4:4 | G4:2 Bb4:2 E5:2 G5:2 | A5:4 E5:2 C#5:2",
-		bounce("D2", "Bb1", "C2", "A1", "D2", "Bb1", "G1", "A1")},
-	{160, "E5:1 E5:1 B5:2 A5:1 G5:1 E5:2 | D5:1 D5:1 A5:2 G5:1 F#5:1 D5:2 | C5:1 C5:1 G5:2 F#5:1 E5:1 C5:2 | B4:2 D#5:2 F#5:2 B5:2 | " +
-		"G5:2 F#5:2 E5:2 B4:2 | A5:2 G5:2 F#5:2 D5:2 | G5:1 F#5:1 E5:1 D#5:1 C5:2 A4:2 | B4:4 B4:1 D#5:1 F#5:2",
-		bounce("E2", "D2", "C2", "B1", "E2", "D2", "C2", "B1")},
-}
-
-// Title is the title-screen jingle.
-var Title = Track{120,
-	"C5:2 E5:2 G5:2 C6:2 | B5:2 G5:2 A5:2 F5:2 | E5:2 G5:2 C6:2 E6:2 | D6:4 C6:4",
-	bounce("C3", "G2", "C3", "G2")}
 
 // ------------------------------------------------------------------ sfx ----
 
