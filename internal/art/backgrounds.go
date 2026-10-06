@@ -27,7 +27,7 @@ type Layers struct {
 
 // BackgroundLayers returns the four level backdrops in level order.
 func BackgroundLayers() []Layers {
-	return []Layers{bgEgypt(), bgGreece(), bgCastle(), bgCity()}
+	return []Layers{bgEgypt(), bgGreece(), bgCastle(), bgCity(), bgVolcano(), bgIceland()}
 }
 
 // Backgrounds returns each backdrop flattened at zero parallax (previews).

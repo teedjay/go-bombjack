@@ -3,12 +3,13 @@ package game
 import (
 	"testing"
 
+	"bombjack/internal/level"
 	"bombjack/internal/world"
 )
 
 // TestHeadlessRounds steps every level's world without ebiten rendering.
 func TestHeadlessRounds(t *testing.T) {
-	for round := 0; round < 4; round++ {
+	for round := 0; round < len(level.Levels); round++ {
 		p := NewPlay(round)
 		for i := 0; i < 600; i++ {
 			c := world.Controls{Left: i%200 < 100, Right: i%200 >= 100, Jump: i%60 < 20, JumpPressed: i%60 == 0}

@@ -47,6 +47,7 @@ type BurstSpec struct {
 	Wobble  float64      // sideways drift amplitude (steam)
 	Outline color.RGBA   // outline colour for Round puffs; overlapping puffs merge into one cartoon cloud
 	Pop     int          // each particle bursts into this many sparks when it dies
+	VX, VY  float64      // base velocity added to every particle (drift, fall)
 }
 
 // Burst emits particles centred on (x,y) in playfield coordinates.
@@ -67,7 +68,7 @@ func (f *FX) Burst(x, y float64, s BurstSpec) {
 		}
 		f.parts = append(f.parts, particle{
 			x: x, y: y,
-			vx: math.Cos(a) * sp, vy: math.Sin(a)*sp - s.UpBias,
+			vx: math.Cos(a)*sp + s.VX, vy: math.Sin(a)*sp - s.UpBias + s.VY,
 			gravity: s.Gravity, drag: drag,
 			life: int(float64(s.Life) * (0.6 + 0.4*rand.Float64())),
 			from: s.Colors[rand.IntN(len(s.Colors))], to: s.Fade,

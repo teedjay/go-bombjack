@@ -6,6 +6,7 @@ import (
 	"math"
 
 	"bombjack/internal/enemy"
+	"bombjack/internal/level"
 	"bombjack/internal/world"
 )
 
@@ -81,8 +82,8 @@ func (s *State) NextRound(litOrder []int) {
 	s.started, s.cleared = false, false
 }
 
-// Loop is how many times all four levels have been completed.
-func (s *State) Loop() int { return s.Round / 4 }
+// Loop is how many times every level has been completed.
+func (s *State) Loop() int { return s.Round / len(level.Levels) }
 
 // RoundBonus returns the lit-bomb bonus last awarded at round clear.
 func (s *State) RoundBonus() int { return s.bonusPts }

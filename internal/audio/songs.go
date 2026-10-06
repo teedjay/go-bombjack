@@ -238,8 +238,101 @@ var citySong = func() *Song {
 	}
 }()
 
+// ---------------------------------------------------------------- Volcano --
+
+// Volcano: intense E minor at 150 BPM. A pumping 16th-note bass through a
+// swept filter, running arpeggios under a fast filter wobble, heavy drums
+// and a screaming noise-attack saw lead with vibrato.
+var volcanoSong = func() *Song {
+	pump := "R R O R R R O R R R O R F F O F"
+	em := fig(pump, "E2", "E3", "B2")
+	c := fig(pump, "C2", "C3", "G2")
+	d := fig(pump, "D2", "D3", "A2")
+	am := fig(pump, "A1", "A2", "E2")
+	b7 := fig(pump, "B1", "B2", "F#2")
+	Em, C, D, Am, B7 := []string{"E4", "G4", "B4"}, []string{"C4", "E4", "G4"}, []string{"D4", "F#4", "A4"},
+		[]string{"A3", "C4", "E4"}, []string{"B3", "D#4", "F#4", "A4"}
+	return &Song{
+		Name: "volcano", Speed: 5,
+		Drums: pattern("k.h.s.hkk.h.s.hh"),
+		Stabs: pattern("x-------x-------"),
+		Bass: Instr{Wave: sidPulse, PW: 0.3, PWMDepth: 0.12, PWMRate: 0.6, A: 0.001, D: 0.06, S: 0.4, R: 0.02,
+			Filter: true, Cutoff: 2600, CutoffEnd: 500, Q: 0.3},
+		Chord: Instr{Wave: sidPulse, PW: 0.25, PWMDepth: 0.2, PWMRate: 0.5, A: 0.002, D: 0.3, S: 0.6, R: 0.04,
+			Filter: true, Cutoff: 3200, CutoffEnd: 700, FilterLFO: 0.9, Q: 0.2},
+		Lead: Instr{Wave: sidSaw, A: 0.003, D: 0.3, S: 0.7, R: 0.06, NoiseAttack: true,
+			Vibrato: 0.009, VibDelay: 8, Slide: 2},
+		Echo: 0.12, EchoSteps: 3, Mix: [3]float64{0.52, 0.22, 0.32},
+		Intro: []Bar{B(em, rest, Em...), B(b7, ". . . . . . . . B4 - - - D#5 - F#5 -", B7...)},
+		Loop: []Bar{
+			B(em, "E5 - - - G5 - - - B5 - - - A5 - G5 -", Em...),
+			B(c, "E5 - - - - - - - C5 - - - E5 - G5 -", C...),
+			B(d, "F#5 - - - A5 - - - D6 - - - C6 - A5 -", D...),
+			B(em, "B5 - - - - - - - - - - - - - - -", Em...),
+			B(em, "E6 - - - D6 - B5 - - - G5 - A5 - B5 -", Em...),
+			B(c, "C6 - - - B5 - G5 - - - E5 - G5 - C6 -", C...),
+			B(d, "D6 - - - C6 - A5 - F#5 - - - A5 - D6 -", D...),
+			B(b7, "D#6 - - - - - - - B5 - - - F#5 - - .", B7...),
+			B(am, "A5 - - - C6 - - - E6 - - - D6 - C6 -", Am...),
+			B(c, "G5 - - - - - E5 - G5 - - - C6 - - -", C...),
+			B(b7, "B5 - - - A5 - - - F#5 - - - D#5 - - -", B7...),
+			B(em, "E5 - - - - - - - G5 - - - B5 - - -", Em...),
+			B(am, "C6 - - - B5 - A5 - - - E5 - - - - -", Am...),
+			B(c, "E6 - - - D6 - C6 - - - G5 - - - - -", C...),
+			B(b7, "F#6 - - - D#6 - - - B5 - - - A5 - F#5 -", B7...),
+			B(em, "E6 - - - - - - - - - - - - - - .", Em...),
+		},
+	}
+}()
+
+// ---------------------------------------------------------------- Iceland --
+
+// Iceland: calm and airy in D major (~94 BPM). Soft triangle bass, slow
+// shimmering arpeggios under a gentle filter LFO, sparse drums and a
+// floating triangle lead with long echo, slides and vibrato.
+var icelandSong = func() *Song {
+	float := "R - - - - - - - F - - - O - - -"
+	d := fig(float, "D2", "D3", "A2")
+	g := fig(float, "G1", "G2", "D2")
+	em := fig(float, "E2", "E3", "B2")
+	a := fig(float, "A1", "A2", "E2")
+	bm := fig(float, "B1", "B2", "F#2")
+	Dmaj7, Gmaj7, Em, A, Bm := []string{"D4", "F#4", "A4", "C#5"}, []string{"G3", "B3", "D4", "F#4"},
+		[]string{"E4", "G4", "B4", "D5"}, []string{"A3", "C#4", "E4"}, []string{"B3", "D4", "F#4"}
+	return &Song{
+		Name: "iceland", Speed: 8,
+		Drums: pattern("k.......h...h..."),
+		Stabs: pattern("x---------------"),
+		Bass:  Instr{Wave: sidTri, A: 0.01, D: 0.6, S: 0.6, R: 0.2},
+		Chord: Instr{Wave: sidPulse, PW: 0.5, PWMDepth: 0.3, PWMRate: 0.15, A: 0.05, D: 0.8, S: 0.7, R: 0.3,
+			Filter: true, Cutoff: 2400, CutoffEnd: 900, FilterLFO: 0.1, Q: 0.35},
+		Lead: Instr{Wave: sidTri, A: 0.03, D: 0.6, S: 0.8, R: 0.3,
+			Vibrato: 0.006, VibDelay: 14, Slide: 5},
+		Echo: 0.22, EchoSteps: 4, Mix: [3]float64{0.45, 0.25, 0.4},
+		Intro: []Bar{B(d, rest, Dmaj7...), B(a, ". . . . . . . . . . . . E5 - - -", A...)},
+		Loop: []Bar{
+			B(d, "F#5 - - - - - - - A5 - - - C#6 - - -", Dmaj7...),
+			B(g, "B5 - - - - - - - - - - - A5 - - -", Gmaj7...),
+			B(em, "G5 - - - - - B5 - - - - - E6 - - -", Em...),
+			B(a, "C#6 - - - - - - - - - - - - - - -", A...),
+			B(d, "D6 - - - - - C#6 - A5 - - - F#5 - - -", Dmaj7...),
+			B(g, "G5 - - - B5 - - - D6 - - - F#6 - - -", Gmaj7...),
+			B(em, "E6 - - - D6 - - - B5 - - - G5 - - -", Em...),
+			B(a, "A5 - - - - - - - - - - - - - - .", A...),
+			B(bm, "D6 - - - - - - - F#6 - - - - - - -", Bm...),
+			B(g, "E6 - - - D6 - - - B5 - - - - - - -", Gmaj7...),
+			B(d, "A5 - - - F#5 - - - A5 - - - D6 - - -", Dmaj7...),
+			B(a, "C#6 - - - - - - - E6 - - - - - - -", A...),
+			B(bm, "F#6 - - - E6 - D6 - - - B5 - - - - -", Bm...),
+			B(g, "G6 - - - F#6 - - - D6 - - - B5 - - -", Gmaj7...),
+			B(em, "E6 - - - - - - - G6 - - - F#6 - E6 -", Em...),
+			B(a, "C#6 - - - - - - - - - - - - - - .", A...),
+		},
+	}
+}()
+
 // LevelSongs are the in-game tunes in level order.
-var LevelSongs = [4]*Song{egyptSong, greeceSong, castleSong, citySong}
+var LevelSongs = [6]*Song{egyptSong, greeceSong, castleSong, citySong, volcanoSong, icelandSong}
 
 // ---------------------------------------------------------------- hiscore --
 

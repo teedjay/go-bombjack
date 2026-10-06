@@ -270,3 +270,11 @@ and must not edit packages it does not own. To ask for a contract change, leave 
   - **Hi-score:** unchanged.
 
   Each has an intro and a 16-bar loop (8 bars for the hi-score), 25–36 s long.
+- **2026-10-06 — Volcano and Iceland levels (5 and 6).**
+  - New parallax backdrops (`backgrounds2.go`):
+    - **Volcano:** a huge volcano with lava rivers and a molten crater, drifting ash plumes, black rock and a lava pool in front.
+    - **Iceland:** an aurora sky, an ice mountain with glaciers, mist banks, and snow dunes, ice spikes and pines in front.
+  - New platform themes and level layouts (24 grouped bombs, all reachable) and enemy configs.
+  - An ambient particle layer (`Play.bgfx`, `BurstSpec.VX/VY`): crater smoke and lava embers, and two-depth snowfall.
+  - New SID tunes: **Volcano** (150 BPM E-minor pumping bass, filter-wobble arpeggios, noise-attack saw lead) and **Iceland** (airy D major, triangle lead with long echo). Both are in the sound test.
+  - Level count is no longer hard-coded to 4 (`rules.Loop`, the title backdrop cycle, tests, spritegen mock scenes now built from the real level data).

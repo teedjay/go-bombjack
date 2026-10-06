@@ -128,6 +128,17 @@ var Levels = []Def{
 		groups(row(44, 46, 3, 16), row(172, 46, 3, 16), row(108, 94, 3, 16), row(96, 20, 4, 16),
 			col(4, 40, 4, 30), col(236, 40, 4, 30), row(60, 190, 1, 0), row(116, 190, 1, 0), row(172, 190, 1, 0)),
 		enemy.Config{Spawns: topSpawns, Mix: [3]int{2, 3, 4}, MaxEnemies: 7, StartCount: 3, SpawnEvery: 280, Speed: 1.4}),
+	mk("volcano",
+		[]world.Platform{P(2, 8, 6), P(24, 8, 6), P(11, 13, 10), P(4, 18, 6), P(22, 18, 6)},
+		groups(row(96, 14, 4, 16), row(20, 46, 3, 16), row(200, 46, 3, 16), row(96, 86, 4, 16),
+			row(36, 126, 3, 16), row(184, 126, 3, 16), row(60, 190, 2, 16), row(180, 190, 2, 16)),
+		enemy.Config{Spawns: topSpawns, Mix: [3]int{3, 3, 3}, MaxEnemies: 7, StartCount: 3, SpawnEvery: 260, Speed: 1.45}),
+	mk("iceland",
+		[]world.Platform{P(6, 6, 6), P(20, 6, 6), P(13, 11, 6), P(2, 15, 7), P(23, 15, 7), P(10, 20, 12)},
+		groups(col(4, 40, 2, 20), row(52, 30, 3, 16), row(164, 30, 3, 16), col(236, 40, 2, 20),
+			row(108, 70, 3, 16), row(20, 102, 3, 16), row(188, 102, 3, 16), row(92, 142, 4, 16),
+			row(120, 190, 1, 0)),
+		enemy.Config{Spawns: topSpawns, Mix: [3]int{2, 2, 5}, MaxEnemies: 8, StartCount: 3, SpawnEvery: 240, Speed: 1.5}),
 }
 
 // Build creates the static part of a world for level index i (0-based,

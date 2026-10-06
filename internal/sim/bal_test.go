@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"sort"
 	"testing"
+
+	"bombjack/internal/level"
 )
 
 func median(v []int) int { sort.Ints(v); return v[len(v)/2] }
@@ -13,7 +15,7 @@ func TestBalanceReport(t *testing.T) {
 	if testing.Short() {
 		t.Skip("slow")
 	}
-	for round := 0; round < 4; round++ {
+	for round := 0; round < len(level.Levels); round++ {
 		var first, tot, bombs []int
 		cl, deaths, ticks := 0, 0, 0
 		for s := uint64(1); s <= 120; s++ {

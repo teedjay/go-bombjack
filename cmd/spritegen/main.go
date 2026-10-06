@@ -19,6 +19,7 @@ import (
 	"path/filepath"
 
 	"bombjack/internal/art"
+	"bombjack/internal/level"
 )
 
 type manifestEntry struct {
@@ -89,14 +90,14 @@ func fontSheet() *image.RGBA {
 }
 
 // mockScene composes a still of what a level will look like in game.
-func mockScene(level int, bg *image.RGBA) *image.RGBA {
+func mockScene(lvl int, bg *image.RGBA) *image.RGBA {
 	c := art.NewCanvas(art.FieldW, art.FieldH)
 	c.Blit(bg, 0, 0)
 	anims := map[string]art.Anim{}
 	for _, a := range art.Animations() {
 		anims[a.Name] = a
 	}
-	tiles := anims["platform_"+art.Themes[level].Name].Frames
+	tiles := anims["platform_"+art.Themes[lvl].Name].Frames
 	plat := func(tx, ty, n int) {
 		for i := 0; i < n; i++ {
 			t := tiles[1]
@@ -108,26 +109,24 @@ func mockScene(level int, bg *image.RGBA) *image.RGBA {
 			c.Blit(t, (tx+i)*8, ty*8)
 		}
 	}
-	layouts := [][][3]int{
-		{{3, 7, 8}, {21, 7, 8}, {11, 13, 10}, {2, 19, 6}, {24, 19, 6}},
-		{{12, 6, 8}, {2, 11, 7}, {23, 11, 7}, {12, 17, 8}},
-		{{2, 6, 6}, {24, 6, 6}, {8, 12, 16}, {2, 19, 5}, {25, 19, 5}},
-		{{5, 8, 6}, {21, 8, 6}, {13, 14, 6}},
+	d := level.Levels[lvl%len(level.Levels)]
+	for _, p := range d.Platforms {
+		plat(p.TX, p.TY, p.Len)
 	}
-	for _, p := range layouts[level] {
-		plat(p[0], p[1], p[2])
+	lit := -1
+	if len(d.LitOrder) > 1 {
+		lit = d.LitOrder[1]
 	}
-	bombs := [][2]int{{40, 40}, {60, 40}, {80, 40}, {172, 40}, {192, 40}, {212, 40}, {100, 88}, {120, 88}, {140, 88}, {20, 136}, {230, 136}, {120, 180}}
-	for i, b := range bombs {
+	for i, b := range d.Bombs {
 		name := "bomb"
-		if i == 4 {
+		if i == lit {
 			name = "bomb_lit"
 		}
-		c.Blit(anims[name].Frames[0], b[0], b[1])
+		c.Blit(anims[name].Frames[0], int(b.X), int(b.Y))
 	}
 	c.Blit(anims["jack_float"].Frames[0], 118, 120)
 	enemy := []string{"mummy_walk", "bird_fly", "saucer", "orb"}
-	c.Blit(anims[enemy[level]].Frames[0], 60, 190)
+	c.Blit(anims[enemy[lvl%len(enemy)]].Frames[0], 60, 190)
 	c.Blit(anims["bird_fly"].Frames[1], 200, 70)
 	c.Blit(anims["orb"].Frames[0], 30, 100)
 	c.Blit(anims["power_p"].Frames[0], 180, 150)

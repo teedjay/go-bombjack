@@ -268,5 +268,23 @@
     "frames": 3,
     "fps": 0,
     "loop": false
+  },
+  {
+    "name": "platform_volcano",
+    "file": "sprites/platform_volcano.png",
+    "w": 8,
+    "h": 8,
+    "frames": 3,
+    "fps": 0,
+    "loop": false
+  },
+  {
+    "name": "platform_iceland",
+    "file": "sprites/platform_iceland.png",
+    "w": 8,
+    "h": 8,
+    "frames": 3,
+    "fps": 0,
+    "loop": false
   }
 ]

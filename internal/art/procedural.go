@@ -239,6 +239,8 @@ var Themes = []LevelTheme{
 	{"greece", rgb(0xd8d8e8), rgb(0xa0a8c0), rgb(0x585878), White},
 	{"castle", rgb(0x9878c8), rgb(0x6848a0), rgb(0x302060), rgb(0xc8b0f0)},
 	{"city", rgb(0x50c8d8), rgb(0x2888b0), rgb(0x104060), rgb(0xa0f0f8)},
+	{"volcano", rgb(0x5a4040), rgb(0x3a2a2a), rgb(0x1a1010), rgb(0xf86020)}, // basalt, glowing top
+	{"iceland", rgb(0xc8f0f8), rgb(0x78c0e0), rgb(0x3878a8), White},         // ice, snowy top
 }
 
 // PlatformTile is an 8x8 tile; platforms are rows of them (left cap, middle, right cap).

@@ -12,6 +12,7 @@ import (
 
 	"bombjack/internal/audio"
 	"bombjack/internal/gfx"
+	"bombjack/internal/level"
 	"bombjack/internal/world"
 )
 
@@ -68,8 +69,8 @@ const (
 // shine sweep (shared by the title and menu screens).
 func drawTitleBackdrop(g *Game, screen *ebiten.Image, tick int) {
 	screen.Fill(colBlack)
-	level := (tick / 300) % 4
-	g.Sheet.DrawBackground(screen, level, HUDH, math.Sin(float64(tick)/120), tick*3)
+	bg := (tick / 300) % len(level.Levels)
+	g.Sheet.DrawBackground(screen, bg, HUDH, math.Sin(float64(tick)/120), tick*3)
 
 	logo := g.Sheet.Logo()
 	lx, ly := logoOrigin(g)

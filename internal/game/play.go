@@ -10,6 +10,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 
+	"bombjack/internal/art"
 	"bombjack/internal/enemy"
 	"bombjack/internal/gfx"
 	"bombjack/internal/level"
@@ -35,6 +36,11 @@ var (
 	colSteam     = color.RGBA{0xd8, 0xdc, 0xe8, 0xff}
 	colSmokeDark = color.RGBA{0x48, 0x4c, 0x60, 0xff}
 	colTrailInk  = color.RGBA{0x40, 0x42, 0x58, 0xff} // cartoon outline on smoke
+	colAsh       = color.RGBA{0x5a, 0x48, 0x48, 0xff} // volcano smoke
+	colAshLit    = color.RGBA{0x8a, 0x58, 0x40, 0xff}
+	colAshDark   = color.RGBA{0x2a, 0x1e, 0x20, 0xff}
+	colAshInk    = color.RGBA{0x1a, 0x10, 0x10, 0xff}
+	colSnow      = color.RGBA{0xc0, 0xe0, 0xf8, 0xff}
 )
 
 type phase int
@@ -60,6 +66,7 @@ type Play struct {
 	Jack   *player.Jack
 	Def    level.Def
 	fx     *gfx.FX
+	bgfx   *gfx.FX // ambient particles between the backdrop and the platforms
 	phase  phase
 	t      int // ticks in current phase
 	paused bool
@@ -101,6 +108,7 @@ func newRound(g *Game, r *rules.State) *Play {
 	if g != nil {
 		r.HiScore = g.HiScore
 		p.fx = gfx.NewFX(g.Sheet)
+		p.bgfx = gfx.NewFX(g.Sheet)
 		g.Audio.PlayMusic(w.Level)
 	} else {
 		p.phase = phasePlay
@@ -130,6 +138,8 @@ func (p *Play) Update(g *Game, c world.Controls) Scene {
 	p.t++
 	if p.fx != nil {
 		p.fx.Update()
+		p.bgfx.Update()
+		p.ambient()
 	}
 	switch p.phase {
 	case phaseIntro:
@@ -201,6 +211,38 @@ func (p *Play) respawn() {
 	w.Enemies = w.Enemies[:0]
 	w.FrightTicks = 0
 	p.phase, p.t = phaseIntro, introTicks/2
+}
+
+// ambient spawns each level's living-backdrop particles: smoke from the
+// volcano's crater and embers from its lava pool; snowfall in Iceland, in
+// two depths (small slow flakes behind everything, big fast ones in front).
+func (p *Play) ambient() {
+	tick := p.World.Tick + p.t
+	switch p.Def.Name {
+	case "volcano":
+		if tick%5 == 0 {
+			// the crater sits on the far layer, which shifts with parallax
+			cx := art.VolcanoCrater.X - p.parallax*art.ParallaxMargin
+			p.bgfx.Burst(cx+rand.Float64()*24-12, art.VolcanoCrater.Y-2, gfx.BurstSpec{N: 1,
+				Colors: []color.RGBA{colAsh, colAshLit}, Fade: colAshDark, Speed: 0.25,
+				VX: 0.15, VY: -0.35, Drag: 0.995, Life: 170, Size: 5, Grow: 0.09,
+				Round: true, Outline: colAshInk, Wobble: 2})
+		}
+		if tick%3 == 0 {
+			p.bgfx.Burst(70+rand.Float64()*116, world.FieldH-10, gfx.BurstSpec{N: 1,
+				Colors: []color.RGBA{colYellow, colOrange, colWhite}, Fade: colRedDark,
+				Speed: 0.4, VY: -1.1, Gravity: 0.012, Life: 75, Wobble: 2, Big: 0.25})
+		}
+	case "iceland":
+		p.bgfx.Burst(rand.Float64()*(world.FieldW+40)-20, -2, gfx.BurstSpec{N: 1,
+			Colors: []color.RGBA{colWhite, colSnow}, Fade: colSnow, Speed: 0.1,
+			VX: 0.12, VY: 0.45, Life: 520, Wobble: 3})
+		if tick%7 == 0 {
+			p.fx.Burst(rand.Float64()*(world.FieldW+60)-30, -4, gfx.BurstSpec{N: 1,
+				Colors: []color.RGBA{colWhite}, Fade: colSnow, Speed: 0.1,
+				VX: 0.3, VY: 1.0, Life: 240, Size: 2, Wobble: 4})
+		}
+	}
 }
 
 func (p *Play) handleEvents() {
@@ -372,6 +414,9 @@ func (p *Play) drawFrame(g *Game, screen *ebiten.Image) {
 	w, s := p.World, g.Sheet
 	screen.Fill(colBlack)
 	s.DrawBackground(screen, w.Level, HUDH, p.parallax, w.Tick)
+	if p.bgfx != nil {
+		p.bgfx.Draw(screen, HUDH)
+	}
 	for _, pl := range w.Platforms {
 		s.DrawPlatform(screen, w.Level, float64(pl.TX*world.Tile), float64(pl.TY*world.Tile+HUDH), pl.Len)
 	}
