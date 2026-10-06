@@ -76,7 +76,8 @@ type Play struct {
 	parallax     float64 // smoothed -1..1 from Jack's x position
 	shake        int     // ticks of screen shake left
 	shakeAmp     float64
-	flash        int // ticks of white screen flash left
+	flash        int  // ticks of white screen flash left
+	still        bool // no shake or flash (clean showcase screenshots)
 	missiles     *missile.Manager
 	lastTail     map[*missile.Missile]world.Vec // trail interpolation
 	canvas       *ebiten.Image                  // offscreen frame, drawn shaken to the screen
@@ -400,7 +401,7 @@ func (p *Play) Draw(g *Game, dst *ebiten.Image) {
 	p.drawFrame(g, p.canvas)
 	dst.Fill(colBlack)
 	op := &ebiten.DrawImageOptions{}
-	if p.shake > 0 && !p.paused {
+	if p.shake > 0 && !p.paused && !p.still {
 		// jitter alternates direction each tick and eases out
 		a := p.shakeAmp * float64(p.shake) / 8
 		dx := math.Round(a * float64(1-2*(p.World.Tick%2)))
@@ -454,14 +455,14 @@ func (p *Play) drawFrame(g *Game, screen *ebiten.Image) {
 		}
 		s.Draw(screen, name, w.Tick, e.Pos().X, e.Pos().Y+HUDH, e.FacingLeft())
 	}
-	p.drawJack(g, screen)
 	if p.fx != nil {
 		p.fx.Draw(screen, HUDH)
 	}
 	for _, ms := range p.missiles.Missiles {
 		s.DrawRotated(screen, "missile", w.Tick, ms.Pos.X, ms.Pos.Y+HUDH, ms.Angle)
 	}
-	if p.flash > 0 {
+	p.drawJack(g, screen) // always on top of smoke, effects and missiles
+	if p.flash > 0 && !p.still {
 		a := float32(p.flash) / 6 * 0.45
 		vector.FillRect(screen, 0, HUDH, ScreenW, world.FieldH, color.RGBA{uint8(255 * a), uint8(255 * a), uint8(255 * a), uint8(255 * a)}, false)
 	}

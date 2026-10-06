@@ -85,6 +85,7 @@ func (g *Game) Update() error {
 	c := input.Read()
 	if g.auto != nil {
 		c = g.auto.controls(g.Tick)
+		g.auto.showcase(g)
 	}
 	g.scene = g.scene.Update(g, c)
 	return nil

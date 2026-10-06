@@ -11,6 +11,8 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 
+	"bombjack/internal/enemy"
+	"bombjack/internal/rules"
 	"bombjack/internal/world"
 )
 
@@ -21,6 +23,7 @@ type Autoshot struct {
 	dir   string
 	ticks []int
 	idle  bool // no input (always for round < 0, which stays on the title)
+	show  bool // showcase: crowded screen and missile salvoes (README shots)
 }
 
 func autoshotFromEnv(g *Game) *Autoshot {
@@ -32,10 +35,12 @@ func autoshotFromEnv(g *Game) *Autoshot {
 	if len(parts) != 3 {
 		return nil
 	}
-	// "3i" = round 3 with no input (idle), e.g. to see the hint flash
+	// "3i" = round 3 with no input (idle), e.g. to see the hint flash;
+	// "4x" = round 4 as a showcase: lots of enemies and missile salvoes
 	idle := strings.HasSuffix(parts[1], "i")
-	round, _ := strconv.Atoi(strings.TrimSuffix(parts[1], "i"))
-	a := &Autoshot{dir: parts[0], idle: idle}
+	show := strings.HasSuffix(parts[1], "x")
+	round, _ := strconv.Atoi(strings.TrimRight(parts[1], "ix"))
+	a := &Autoshot{dir: parts[0], idle: idle, show: show}
 	for _, s := range strings.Split(parts[2], ",") {
 		if n, err := strconv.Atoi(s); err == nil {
 			a.ticks = append(a.ticks, n)
@@ -59,6 +64,7 @@ func autoshotFromEnv(g *Game) *Autoshot {
 	}
 	pl := newRound(g, d.Rules)
 	pl.World.Invincible = true // autopilot never dies, so later events get captured
+	pl.still = show            // showcase stills: no shake or white flash
 	g.scene = pl
 	return a
 }
@@ -67,6 +73,9 @@ func autoshotFromEnv(g *Game) *Autoshot {
 func (a *Autoshot) controls(tick int) world.Controls {
 	if a.idle {
 		return world.Controls{}
+	}
+	if a.show { // stand still at the bottom and fire bursts of 4 missiles
+		return world.Controls{Fire: tick > 240 && tick%120 < 24 && tick%6 == 0}
 	}
 	phase := tick % 240
 	return world.Controls{
@@ -98,4 +107,40 @@ func (a *Autoshot) capture(g *Game, screen *ebiten.Image) error {
 		return ErrQuit
 	}
 	return nil
+}
+
+// showcase keeps the screen busy for promotional shots: a crowd of every
+// enemy type and a full missile stock.
+func (a *Autoshot) showcase(g *Game) {
+	p, ok := g.scene.(*Play)
+	if !a.show || !ok {
+		return
+	}
+	p.Rules.Missiles = rules.MaxMissiles
+	w := p.World
+	// keep the crowd high up (enemies that come down are replaced up top),
+	// so missiles fly long arcs from Jack at the bottom
+	kept := w.Enemies[:0]
+	for _, e := range w.Enemies {
+		if e.Pos().Y <= 110 {
+			kept = append(kept, e)
+		}
+	}
+	w.Enemies = kept
+	for len(w.Enemies) < 10 {
+		// the crowd lives in the upper half, so missiles fly long arcs
+		pos := world.Vec{X: float64(16 + w.Rng.IntN(world.FieldW-48)), Y: float64(8 + w.Rng.IntN(80))}
+		var e world.Enemy
+		switch len(w.Enemies) % 4 {
+		case 0:
+			e = enemy.NewBird(w, pos, 1.2)
+		case 1:
+			e = enemy.NewSaucer(w, pos, 1.2)
+		case 2:
+			e = enemy.NewOrb(w, pos, 1.2)
+		default:
+			e = enemy.NewMummy(w, pos, 1.2, [3]int{1, 1, 1})
+		}
+		w.Enemies = append(w.Enemies, e)
+	}
 }

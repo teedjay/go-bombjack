@@ -4,7 +4,7 @@ A Bomb Jack–style arcade platformer written in Go with [Ebitengine](https://eb
 inspired by Tehkan's 1984 arcade classic. Jack leaps and floats around four screens collecting
 24 bombs per round, while mummies, birds, saucers and orbs hunt him down.
 
-![In-game screenshot: round 1, Egypt](docs/screenshot.png)
+![In-game screenshot: the Volcano level, with homing missiles curving through a sky full of enemies](docs/screenshot.png)
 
 ## Features
 
@@ -88,7 +88,7 @@ The `web/` folder is static, so it can be hosted anywhere.
 | `make test` | Run all unit tests. Game logic is headless and runs without a window |
 | `make lint` | gofmt check + `go vet` |
 | `make sprites` | Render all sprites/backgrounds to `assets/` plus an animated preview at `assets/preview/index.html` |
-| `make shots ROUND=2 TICKS=300,900` | Autopilot run that saves screenshots to `shots/` (`ROUND=-1` title, `-2` menu, `-3` sound test, `0i` = round 0 with no input) |
+| `make shots ROUND=2 TICKS=300,900` | Autopilot run that saves screenshots to `shots/` (`ROUND=-1` title, `-2` menu, `-3` sound test, `0i` = round 0 with no input, `4x` = showcase of round 4: a crowd of enemies and missile bursts, used for the README screenshot) |
 | `make web` / `make serve` | Build or serve the WebAssembly version |
 | `make music` | Render all music to WAV files in `music/` |
 
