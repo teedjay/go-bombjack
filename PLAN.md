@@ -255,3 +255,4 @@ and must not edit packages it does not own. To ask for a contract change, leave 
 - **2026-10-05 — High-score music.** `internal/audio/sid.go` is a 3-voice SID-style tracker running on 50 Hz frames. It uses PWM, 50 Hz arpeggio chords, a resonant filter sweep on the bass, a kick and snare stolen from the bass and chord voices, hard restart, portamento, delayed vibrato and a lead echo. The tune is an original laid-back A-minor funk piece: a 9 s intro, then a 36 s loop.
   - It plays from initials entry through the table, and fades out (1.5 s) into the title music via `audio.FadeTo`.
   - `make music` exports all tracks as WAV files.
+- **2026-10-06 — Title pages.** The title panel cycles through four 6 s pages: controls, high scores, "Meet the enemies" (animated, with behaviour hints) and "Bonus items" (a 3×3 grid of animated pickups with their values). Added a `+` glyph to the font.

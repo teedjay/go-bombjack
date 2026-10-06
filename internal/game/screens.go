@@ -57,6 +57,56 @@ func (t *Title) Update(g *Game, c world.Controls) Scene {
 	return t
 }
 
+// The title panel cycles through four pages: controls, high scores,
+// enemies and bonus items.
+const (
+	titlePageTicks = 360 // 6 seconds per page
+	titlePanelX    = 24
+)
+
+// drawEnemyPage introduces the four enemies, two per row.
+func drawEnemyPage(g *Game, screen *ebiten.Image, tick int) {
+	g.centerText(screen, "MEET THE ENEMIES", 121, colYellow)
+	enemies := []struct{ anim, name, hint string }{
+		{"mummy_walk", "MUMMY", "MORPHS"},
+		{"bird_fly", "BIRD", "HOMES IN"},
+		{"saucer", "SAUCER", "BOUNCES"},
+		{"orb", "ORB", "DRIFTS"},
+	}
+	for i, e := range enemies {
+		x := float64(titlePanelX + 12 + (i%2)*100)
+		y := float64(138 + (i/2)*30)
+		g.Sheet.Draw(screen, e.anim, tick, x, y, false)
+		g.Sheet.Text(screen, e.name, x+22, y, colWhite)
+		g.Sheet.Text(screen, e.hint, x+22, y+9, colCyan)
+	}
+}
+
+// drawPickupPage shows every collectable with its value, in a 3x3 grid.
+func drawPickupPage(g *Game, screen *ebiten.Image, tick int) {
+	g.centerText(screen, "BONUS ITEMS", 121, colYellow)
+	items := []struct {
+		anim, label string
+		dy          float64 // vertical nudge for sprites shorter than 16px
+	}{
+		{"bomb", "100", 0},
+		{"bomb_lit", "200", 0},
+		{"coin", "100+", 0},
+		{"power_p", "COINS", 0},
+		{"power_b", "X+1", 0},
+		{"power_e", "1UP", 0},
+		{"power_s", "100K", 0},
+		{"power_m", "+3", 0},
+		{"missile", "500", 4},
+	}
+	for i, it := range items {
+		x := float64(titlePanelX + 8 + (i%3)*68)
+		y := float64(134 + (i/3)*22)
+		g.Sheet.Draw(screen, it.anim, tick, x, y+it.dy, false)
+		g.Sheet.Text(screen, it.label, x+19, y+4, colWhite)
+	}
+}
+
 var titleCycle = []color.Color{colYellow, colOrange, colRed, colPink, colPurple, colCyan, colWhite}
 
 func (t *Title) Draw(g *Game, screen *ebiten.Image) {
@@ -85,14 +135,19 @@ func (t *Title) Draw(g *Game, screen *ebiten.Image) {
 
 	g.centerText(screen, fmt.Sprintf("HI %07d", g.HiScore), 4, colYellow)
 	g.centerText(screen, "PRESS ENTER", 100, titleCycle[t.t/6%len(titleCycle)])
-	panel(screen, 36, 114, ScreenW-72, 90)
-	if t.t/360%2 == 0 {
+	panel(screen, titlePanelX, 114, ScreenW-2*titlePanelX, 90)
+	switch t.t / titlePageTicks % 4 {
+	case 0:
 		g.centerText(screen, "ARROWS MOVE  Z JUMP", 137, colCyan)
 		g.centerText(screen, "TAP Z IN AIR TO FLY", 149, colCyan)
 		g.centerText(screen, "X FIRE HOMING MISSILE", 161, colCyan)
 		g.centerText(screen, "M MUTE  P PAUSE", 173, colCyan)
-	} else {
+	case 1:
 		drawTable(g, screen, 121, "", -1)
+	case 2:
+		drawEnemyPage(g, screen, t.t)
+	case 3:
+		drawPickupPage(g, screen, t.t)
 	}
 	// parade of sprites
 	names := []string{"jack_run", "mummy_walk", "bird_fly", "saucer", "orb", "bomb_lit"}
